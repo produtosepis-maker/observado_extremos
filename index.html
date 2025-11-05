@@ -102,6 +102,40 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
+        /* Estilos para o Seletor de Data */
+        .date-selector-container {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e0f2f1;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .date-selector-container label {
+            font-weight: bold;
+            color: #004d40;
+            margin-right: 10px;
+        }
+        .date-selector-container input[type="date"] {
+            padding: 8px;
+            border: 1px solid #009688;
+            border-radius: 4px;
+            font-size: 1em;
+            margin-right: 10px;
+        }
+        .date-selector-container button {
+            padding: 8px 15px;
+            background-color: #009688;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        .date-selector-container button:hover {
+            background-color: #00796b;
+        }
     </style>
 </head>
 <body>
@@ -114,6 +148,11 @@
             <p id="lastRefreshTime"></p>
         </div>
 
+        <div class="date-selector-container">
+            <label for="date-input">Buscar dados do dia:</label>
+            <input type="date" id="date-input">
+            <button id="search-button">Buscar</button>
+        </div>
         <div class="loading-animation" id="loading">
             <img src="https://i.imgur.com/u7sA5mF.gif" alt="Carregando...">
             <p>Carregando dados, por favor aguarde...</p>
@@ -193,11 +232,27 @@
             document.getElementById('lastRefreshTime').textContent = `Última atualização da página: ${formatTime(lastRefresh)}`;
         }
 
+        /**
+         * Limpa todos os gráficos existentes antes de criar novos.
+         */
+        function destroyExistingCharts() {
+            const chartIds = ['chart-chuva-total', 'chart-tem-max', 'chart-umd-max', 'chart-ven-max', 'chart-umd-min', 'chart-tem-min'];
+            chartIds.forEach(id => {
+                const canvas = document.getElementById(id);
+                if (canvas && canvas.chart) {
+                    canvas.chart.destroy();
+                }
+            });
+        }
+
         async function fetchHourData(dateString, hour) {
             const url = `${API_BASE_URL}/${dateString}/${hour}/${API_TOKEN}`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
+                    // Tenta ler o corpo da resposta em caso de erro, se disponível
+                    const errorText = await response.text();
+                    console.error(`Falha na resposta da rede (${response.status} ${response.statusText}) para ${url}: ${errorText}`);
                     throw new Error('Falha na resposta da rede');
                 }
                 const data = await response.json();
@@ -210,7 +265,6 @@
 
         /**
          * Cria a tabela de estações para uma UF específica.
-         * MODIFICADO: Adiciona a coluna 'UF' no cabeçalho e nos dados.
          */
         function createUFTable(uf, stations) {
             const ufContainer = document.createElement('div');
@@ -219,7 +273,6 @@
             const table = document.createElement('table');
             table.id = `table-${uf}`;
             const thead = document.createElement('thead');
-            // Adicionando 'UF' no cabeçalho
             const headers = ['Estação', 'UF', 'Temp. Máxima (°C)', 'Temp. Mínima (°C)', 'Umid. Máxima (%)', 'Umid. Mínima (%)', 'Vento Máximo (km/h)', 'Chuva Total (mm)'];
             const headerRow = document.createElement('tr');
 
@@ -247,11 +300,10 @@
                     if (CAPITAIS[uf] && station.DC_NOME.includes(CAPITAIS[uf])) {
                         row.classList.add('capital-row');
                     }
-                    
-                    // Adicionando 'UF' nos valores
+
                     const values = [
                         station.DC_NOME,
-                        station.UF, // Adicionado o valor da UF
+                        station.UF,
                         station.TEM_MAX !== -Infinity ? station.TEM_MAX.toFixed(1) : '-',
                         station.TEM_MIN !== Infinity ? station.TEM_MIN.toFixed(1) : '-',
                         station.UMD_MAX !== -Infinity ? station.UMD_MAX.toFixed(0) : '-',
@@ -319,36 +371,32 @@
 
         function createBarChart(elementId, title, label, data, labels, isDesc = true) {
             const ctx = document.getElementById(elementId).getContext('2d');
+            
+            // Certifique-se de que nenhum gráfico anterior com o mesmo ID está ativo
+            const canvas = document.getElementById(elementId);
+            if (canvas.chart) {
+                canvas.chart.destroy();
+            }
+            
             const dataSorted = data.slice();
             const labelsSorted = labels.slice();
 
-            if (isDesc) {
-                const sortedPairs = labelsSorted.map((label, i) => ({ label, data: dataSorted[i] })).sort((a, b) => b.data - a.data);
-                labelsSorted.length = 0;
-                dataSorted.length = 0;
-                sortedPairs.forEach(pair => {
-                    labelsSorted.push(pair.label);
-                    dataSorted.push(pair.data);
-                });
-            } else {
-                const sortedPairs = labelsSorted.map((label, i) => ({ label, data: dataSorted[i] })).sort((a, b) => a.data - b.data);
-                labelsSorted.length = 0;
-                dataSorted.length = 0;
-                sortedPairs.forEach(pair => {
-                    labelsSorted.push(pair.label);
-                    dataSorted.push(pair.data);
-                });
-            }
+            // Lógica de ordenação (simplificada, pois o Chart.js não tem ordenação nativa simples)
+            const sortedPairs = labelsSorted.map((label, i) => ({ label, data: dataSorted[i] }));
+            sortedPairs.sort((a, b) => isDesc ? b.data - a.data : a.data - b.data);
+
+            const finalLabels = sortedPairs.map(pair => pair.label);
+            const finalData = sortedPairs.map(pair => pair.data);
 
             const colors = ['rgba(0, 150, 136, 0.6)', 'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'];
 
-            new Chart(ctx, {
+            canvas.chart = new Chart(ctx, { // Armazena a instância do gráfico no canvas
                 type: 'bar',
                 data: {
-                    labels: labelsSorted,
+                    labels: finalLabels.slice(0, 15),
                     datasets: [{
                         label: label,
-                        data: dataSorted,
+                        data: finalData.slice(0, 15),
                         backgroundColor: (context) => {
                             const value = context.dataset.data[context.dataIndex];
                             if (value === -Infinity || value === Infinity) return 'rgba(128, 128, 128, 0.6)';
@@ -383,33 +431,57 @@
             });
         }
 
-        async function fetchAndProcessData() {
+        /**
+         * Função principal de requisição e processamento, agora aceita a data.
+         * @param {string} selectedDateString - Data selecionada no formato YYYY-MM-DD. Se vazio, usa a data atual.
+         */
+        async function fetchAndProcessData(selectedDateString = null) {
             updateDateTimeInfo();
 
             const LOADING_ANIMATION = document.getElementById('loading');
             const DATA_CONTAINER = document.getElementById('data-container');
             const DATA_TABLES_CONTAINER = document.getElementById('data-tables-container');
             const DATA_SOURCE_INFO = document.getElementById('dataSourceInfo');
+            const SEARCH_BUTTON = document.getElementById('search-button');
+
+            // Limpa gráficos anteriores
+            destroyExistingCharts();
+            DATA_TABLES_CONTAINER.innerHTML = '';
+            DATA_SOURCE_INFO.style.display = 'none';
 
             LOADING_ANIMATION.style.display = 'block';
             DATA_CONTAINER.style.display = 'none';
             DATA_TABLES_CONTAINER.style.display = 'none';
-            DATA_SOURCE_INFO.style.display = 'none';
+            SEARCH_BUTTON.disabled = true; // Desabilita o botão durante a busca
 
-            const today = new Date();
-            const yesterday = new Date();
-            yesterday.setDate(today.getDate() - 1);
+            let targetDate, yesterday;
 
-            const todayFormatted = formatDate(today);
+            if (selectedDateString) {
+                // Se uma data foi selecionada, use-a para a busca.
+                targetDate = new Date(selectedDateString + 'T12:00:00'); // Adiciona um horário para evitar problemas de fuso horário
+                yesterday = new Date(targetDate);
+                yesterday.setDate(targetDate.getDate() - 1);
+            } else {
+                // Comportamento padrão: hoje e ontem.
+                targetDate = new Date();
+                yesterday = new Date();
+                yesterday.setDate(targetDate.getDate() - 1);
+                // Preenche o campo de data com a data atual (padrão)
+                document.getElementById('date-input').value = formatDate(targetDate);
+            }
+
+            const targetDateFormatted = formatDate(targetDate);
             const yesterdayFormatted = formatDate(yesterday);
 
-            const requestsToday = [];
+            // Fetch dos dados: 00h às 23h da data alvo
+            const requestsTarget = [];
             for (let i = 0; i <= 2300; i += 100) {
-                requestsToday.push(fetchHourData(todayFormatted, String(i).padStart(4, '0')));
+                requestsTarget.push(fetchHourData(targetDateFormatted, String(i).padStart(4, '0')));
             }
-            const allDataToday = (await Promise.all(requestsToday)).flat();
-            const validDataToday = allDataToday.filter(d => d && Object.keys(d).length > 0);
+            const allDataTarget = (await Promise.all(requestsTarget)).flat();
+            const validDataTarget = allDataTarget.filter(d => d && Object.keys(d).length > 0);
 
+            // Fetch dos dados de precipitação: 13h às 23h da data anterior
             const requestsYesterday = [];
             for (let i = 1300; i <= 2300; i += 100) {
                 requestsYesterday.push(fetchHourData(yesterdayFormatted, String(i).padStart(4, '0')));
@@ -417,16 +489,18 @@
             const allDataYesterday = (await Promise.all(requestsYesterday)).flat();
             const validDataYesterday = allDataYesterday.filter(d => d && Object.keys(d).length > 0);
 
-            const allData = [...validDataToday, ...validDataYesterday];
+            const allData = [...validDataTarget, ...validDataYesterday];
 
             if (allData.length === 0) {
-                LOADING_ANIMATION.innerHTML = `<p style="color: red;">Não foi possível carregar os dados. Por favor, tente novamente mais tarde.</p>`;
+                LOADING_ANIMATION.innerHTML = `<p style="color: red;">Não foi possível carregar os dados para ${targetDateFormatted}. Por favor, verifique a data ou tente novamente mais tarde.</p>`;
+                SEARCH_BUTTON.disabled = false;
                 return;
             }
 
             const stationsData = {};
 
-            validDataToday.forEach(current => {
+            // Processamento dos dados (máximas/mínimas do dia alvo)
+            validDataTarget.forEach(current => {
                 const stationId = current.CD_ESTACAO;
                 if (!stationsData[stationId]) {
                     stationsData[stationId] = {
@@ -438,7 +512,7 @@
                         UMD_MAX: -Infinity,
                         UMD_MIN: Infinity,
                         VEN_MAX: -Infinity,
-                        CHUVA_TOTAL: 0
+                        CHUVA_TOTAL: 0 // A chuva será calculada no loop seguinte
                     };
                 }
                 const temMax = parseFloat(current.TEM_MAX);
@@ -453,6 +527,7 @@
                 if (!isNaN(venKmh)) stationsData[stationId].VEN_MAX = Math.max(stationsData[stationId].VEN_MAX, venKmh);
             });
 
+            // Acumular Precipitação - Parte de 13h a 23h do dia anterior
             validDataYesterday.forEach(current => {
                 const stationId = current.CD_ESTACAO;
                 if (stationsData[stationId]) {
@@ -460,7 +535,8 @@
                 }
             });
 
-            validDataToday.forEach(current => {
+            // Acumular Precipitação - Parte de 00h a 12h do dia alvo
+            validDataTarget.forEach(current => {
                 const currentHour = parseInt(current.HR_MEDICAO);
                 if (currentHour >= 0 && currentHour <= 1200) {
                     const stationId = current.CD_ESTACAO;
@@ -471,6 +547,8 @@
             });
 
             const processedData = Object.values(stationsData);
+
+            // --- Geração de Resumo Regional e Tabelas de UF (mantida) ---
 
             const regionalSummary = {};
             for (const [regiao, ufs] of Object.entries(REGIOES)) {
@@ -505,8 +583,6 @@
 
             const filteredRegionalSummary = Object.values(regionalSummary).filter(Boolean);
 
-            DATA_TABLES_CONTAINER.innerHTML = '';
-
             if (filteredRegionalSummary.length > 0) {
                 DATA_TABLES_CONTAINER.appendChild(createRegionSummaryTable(filteredRegionalSummary));
             }
@@ -529,7 +605,6 @@
                             if (!isCapitalA && isCapitalB) return 1;
                             return a.DC_NOME.localeCompare(b.DC_NOME);
                         });
-                        // Passando a UF para a função createUFTable, embora ela já a use internamente
                         DATA_TABLES_CONTAINER.appendChild(createUFTable(uf, stationsInUF));
                     }
                 });
@@ -540,8 +615,9 @@
                     DATA_TABLES_CONTAINER.appendChild(noDataParagraph);
                 }
             }
+            
+            // --- Geração de Gráficos (mantida) ---
 
-            // Gerar gráficos de destaque
             const top15Chuva = processedData
                 .filter(d => d.CHUVA_TOTAL !== undefined && d.CHUVA_TOTAL > 0)
                 .sort((a, b) => b.CHUVA_TOTAL - a.CHUVA_TOTAL)
@@ -580,11 +656,18 @@
 
             addSortableTableFunctionality();
 
+            // --- Exibição Final ---
+            
+            let sourceInfoText = `Dados de 00h às 23h para temperatura/umidade/vento do dia **${targetDateFormatted}**. `;
+            sourceInfoText += `Precipitação acumulada de 13h do dia **${yesterdayFormatted}** até 12h do dia **${targetDateFormatted}**.`;
+
+            DATA_SOURCE_INFO.innerHTML = sourceInfoText;
+            
             LOADING_ANIMATION.style.display = 'none';
             DATA_CONTAINER.style.display = 'block';
             DATA_TABLES_CONTAINER.style.display = 'block';
             DATA_SOURCE_INFO.style.display = 'block';
-            DATA_SOURCE_INFO.textContent = `Dados de 00h às 23h para temperatura/umidade/vento do dia ${todayFormatted}. Precipitação acumulada de 13h do dia ${yesterdayFormatted} até 12h do dia ${todayFormatted}.`;
+            SEARCH_BUTTON.disabled = false;
         }
 
         function getCellValue(tr, idx) {
@@ -596,7 +679,6 @@
 
         /**
          * Adiciona funcionalidade de ordenação às tabelas.
-         * MODIFICADO: Ajusta os índices das colunas numéricas devido à nova coluna 'UF'.
          */
         function addSortableTableFunctionality() {
             document.querySelectorAll('th[data-column-index]').forEach(headerCell => {
@@ -621,10 +703,8 @@
                     });
 
                     // Índices de colunas que contêm dados numéricos
-                    // No Resumo (table-summary), os índices permanecem os mesmos: [1, 2, 3, 4, 5, 6]
-                    // Nas tabelas de UF (stations), a coluna 'UF' está no índice 1, deslocando as numéricas: [2, 3, 4, 5, 6, 7]
                     const numericColumnsSummary = [1, 2, 3, 4, 5, 6];
-                    const numericColumnsStations = [2, 3, 4, 5, 6, 7];
+                    const numericColumnsStations = [2, 3, 4, 5, 6, 7]; // Ajustado para a coluna UF
 
                     const isNumeric = isSummaryTable
                         ? numericColumnsSummary.includes(column)
@@ -665,7 +745,33 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', fetchAndProcessData);
+        // --- Novas Funções para a Busca por Data ---
+
+        function handleDateSearch() {
+            const dateInput = document.getElementById('date-input');
+            const selectedDate = dateInput.value;
+
+            if (selectedDate) {
+                fetchAndProcessData(selectedDate);
+            } else {
+                alert('Por favor, selecione uma data para a busca.');
+            }
+        }
+
+        function setMaxDate() {
+            const today = new Date();
+            // Permite buscar até o dia anterior (pois os dados do dia atual podem estar incompletos)
+            // No entanto, como o código busca até 23h de hoje, a data máxima será o dia de hoje.
+            document.getElementById('date-input').setAttribute('max', formatDate(today));
+        }
+
+        // --- Inicialização ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setMaxDate();
+            document.getElementById('search-button').addEventListener('click', handleDateSearch);
+            fetchAndProcessData(); // Carrega os dados do dia atual por padrão
+        });
     </script>
 </body>
 </html>
