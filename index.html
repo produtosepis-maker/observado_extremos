@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <title>DADOS METEOROLÓGICOS DETALHADOS POR REGIÃO</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="900">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #00796b;
+            text-align: center;
+        }
+        .header-info {
+            text-align: center;
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .region-title {
+            color: #004d40;
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #004d40;
+            padding-bottom: 5px;
+        }
+        .uf-title {
+            color: #00897b;
+            text-align: left;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+        p {
+            text-align: center;
+            color: #666;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+        thead th {
+            background-color: #009688;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        thead th:hover {
+            background-color: #00796b;
+        }
+        tbody td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        tbody tr:nth-of-type(even) {
+            background-color: #f9f9f9;
+        }
+        tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .capital-row {
+            font-weight: bold;
+            background-color: #bbdefb !important;
+        }
+        .loading-animation {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .loading-animation img {
+            width: 50px;
+            height: 50px;
+        }
+        .data-source-info {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+        .chart-container {
+            width: 80%;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dados Meteorológicos por Estação e Região</h1>
+        <p>Dados de todas as estações do INMET no Brasil.</p>
+
+        <div class="header-info">
+            <p id="currentDateTime"></p>
+            <p id="lastRefreshTime"></p>
+        </div>
+
+        <div class="loading-animation" id="loading">
+            <img src="https://i.imgur.com/u7sA5mF.gif" alt="Carregando...">
+            <p>Carregando dados, por favor aguarde...</p>
+        </div>
+
+        <div id="data-container" style="display: none;">
+            <h2 class="region-title">Gráficos de Destaque</h2>
+            <div class="chart-container">
+                <h3>Top 15 Municípios com Maior Precipitação</h3>
+                <canvas id="chart-chuva-total"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Top 15 Municípios com Maior Temperatura Máxima</h3>
+                <canvas id="chart-tem-max"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Top 15 Municípios com Maior Umidade Relativa</h3>
+                <canvas id="chart-umd-max"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Top 15 Municípios com Maior Rajada de Vento</h3>
+                <canvas id="chart-ven-max"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Top 15 Municípios com Menor Umidade Relativa</h3>
+                <canvas id="chart-umd-min"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Top 15 Municípios com Menor Temperatura Mínima</h3>
+                <canvas id="chart-tem-min"></canvas>
+            </div>
+        </div>
+
+        <div id="data-tables-container"></div>
+        <div id="dataSourceInfo" class="data-source-info" style="display: none;"></div>
+    </div>
+    <script>
+        const API_BASE_URL = "https://apitempo.inmet.gov.br/token/estacao/dados";
+        const API_TOKEN = "bDVzUzNIdEVUeXJMS3R6RmRZTDJjaFBLMDh3SU5yQk0=l5sS3HtETyrLKtzFdYL2chPK08wINrBM";
+
+        const REGIOES = {
+            'Norte': ['AC', 'AM', 'AP', 'PA', 'RO', 'RR', 'TO'],
+            'Nordeste': ['AL', 'BA', 'CE', 'MA', 'PB', 'PE', 'PI', 'RN', 'SE'],
+            'Sudeste': ['ES', 'MG', 'RJ', 'SP'],
+            'Sul': ['PR', 'RS', 'SC'],
+            'Centro-Oeste': ['GO', 'MT', 'MS', 'DF']
+        };
+
+        const CAPITAIS = {
+            'AC': 'Rio Branco', 'AL': 'Maceió', 'AM': 'Manaus', 'AP': 'Macapá',
+            'BA': 'Salvador', 'CE': 'Fortaleza', 'DF': 'Brasília', 'ES': 'Vitória',
+            'GO': 'Goiânia', 'MA': 'São Luís', 'MG': 'Belo Horizonte', 'MS': 'Campo Grande',
+            'MT': 'Cuiabá', 'PA': 'Belém', 'PB': 'João Pessoa', 'PE': 'Recife',
+            'PI': 'Teresina', 'PR': 'Curitiba', 'RJ': 'Rio de Janeiro', 'RN': 'Natal',
+            'RO': 'Porto Velho', 'RR': 'Boa Vista', 'RS': 'Porto Alegre', 'SC': 'Florianópolis',
+            'SE': 'Aracaju', 'SP': 'São Paulo', 'TO': 'Palmas'
+        };
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        function updateDateTimeInfo() {
+            const now = new Date();
+            const lastRefresh = new Date(performance.timing.navigationStart);
+            document.getElementById('currentDateTime').textContent = `Data e Hora Atual: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+            document.getElementById('lastRefreshTime').textContent = `Última atualização da página: ${formatTime(lastRefresh)}`;
+        }
+
+        async function fetchHourData(dateString, hour) {
+            const url = `${API_BASE_URL}/${dateString}/${hour}/${API_TOKEN}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Falha na resposta da rede');
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error(`Falha na requisição para ${url}:`, error);
+                return [];
+            }
+        }
+
+        /**
+         * Cria a tabela de estações para uma UF específica.
+         * MODIFICADO: Adiciona a coluna 'UF' no cabeçalho e nos dados.
+         */
+        function createUFTable(uf, stations) {
+            const ufContainer = document.createElement('div');
+            ufContainer.innerHTML = `<h3 class="uf-title">${uf}</h3>`;
+
+            const table = document.createElement('table');
+            table.id = `table-${uf}`;
+            const thead = document.createElement('thead');
+            // Adicionando 'UF' no cabeçalho
+            const headers = ['Estação', 'UF', 'Temp. Máxima (°C)', 'Temp. Mínima (°C)', 'Umid. Máxima (%)', 'Umid. Mínima (%)', 'Vento Máximo (km/h)', 'Chuva Total (mm)'];
+            const headerRow = document.createElement('tr');
+
+            headers.forEach((text, index) => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                th.dataset.columnIndex = index;
+                th.dataset.sortOrder = '';
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            if (stations.length === 0) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = headers.length;
+                cell.textContent = "Nenhum dado encontrado para esta UF.";
+                row.appendChild(cell);
+                tbody.appendChild(row);
+            } else {
+                stations.forEach(station => {
+                    const row = document.createElement('tr');
+                    if (CAPITAIS[uf] && station.DC_NOME.includes(CAPITAIS[uf])) {
+                        row.classList.add('capital-row');
+                    }
+                    
+                    // Adicionando 'UF' nos valores
+                    const values = [
+                        station.DC_NOME,
+                        station.UF, // Adicionado o valor da UF
+                        station.TEM_MAX !== -Infinity ? station.TEM_MAX.toFixed(1) : '-',
+                        station.TEM_MIN !== Infinity ? station.TEM_MIN.toFixed(1) : '-',
+                        station.UMD_MAX !== -Infinity ? station.UMD_MAX.toFixed(0) : '-',
+                        station.UMD_MIN !== Infinity ? station.UMD_MIN.toFixed(0) : '-',
+                        station.VEN_MAX !== -Infinity ? station.VEN_MAX.toFixed(1) : '-',
+                        station.CHUVA_TOTAL !== undefined ? station.CHUVA_TOTAL.toFixed(2) : '-'
+                    ];
+
+                    values.forEach(cellData => {
+                        const td = document.createElement('td');
+                        td.textContent = cellData;
+                        row.appendChild(td);
+                    });
+                    tbody.appendChild(row);
+                });
+            }
+            table.appendChild(tbody);
+            ufContainer.appendChild(table);
+            return ufContainer;
+        }
+
+        function createRegionSummaryTable(regionalData) {
+            const tableContainer = document.createElement('div');
+            tableContainer.innerHTML = `<h2 class="region-title">Resumo por Região</h2>`;
+            const table = document.createElement('table');
+            table.id = 'table-summary';
+
+            const thead = document.createElement('thead');
+            const headers = ['Região', 'Temp. Máxima (°C)', 'Temp. Mínima (°C)', 'Umid. Máxima (%)', 'Umid. Mínima (%)', 'Vento Máximo (km/h)', 'Chuva Total (mm)'];
+            const headerRow = document.createElement('tr');
+            headers.forEach((text, index) => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                th.dataset.columnIndex = index;
+                th.dataset.sortOrder = '';
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            regionalData.forEach(data => {
+                const row = document.createElement('tr');
+                const values = [
+                    data.region,
+                    data.temMax !== -Infinity ? data.temMax.toFixed(1) : '-',
+                    data.temMin !== Infinity ? data.temMin.toFixed(1) : '-',
+                    data.umdMax !== -Infinity ? data.umdMax.toFixed(0) : '-',
+                    data.umdMin !== Infinity ? data.umdMin.toFixed(0) : '-',
+                    data.venMax !== -Infinity ? data.venMax.toFixed(1) : '-',
+                    data.chuvaTotal !== undefined ? data.chuvaTotal.toFixed(2) : '-'
+                ];
+                values.forEach(cellData => {
+                    const td = document.createElement('td');
+                    td.textContent = cellData;
+                    row.appendChild(td);
+                });
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(tbody);
+            tableContainer.appendChild(table);
+            return tableContainer;
+        }
+
+        function createBarChart(elementId, title, label, data, labels, isDesc = true) {
+            const ctx = document.getElementById(elementId).getContext('2d');
+            const dataSorted = data.slice();
+            const labelsSorted = labels.slice();
+
+            if (isDesc) {
+                const sortedPairs = labelsSorted.map((label, i) => ({ label, data: dataSorted[i] })).sort((a, b) => b.data - a.data);
+                labelsSorted.length = 0;
+                dataSorted.length = 0;
+                sortedPairs.forEach(pair => {
+                    labelsSorted.push(pair.label);
+                    dataSorted.push(pair.data);
+                });
+            } else {
+                const sortedPairs = labelsSorted.map((label, i) => ({ label, data: dataSorted[i] })).sort((a, b) => a.data - b.data);
+                labelsSorted.length = 0;
+                dataSorted.length = 0;
+                sortedPairs.forEach(pair => {
+                    labelsSorted.push(pair.label);
+                    dataSorted.push(pair.data);
+                });
+            }
+
+            const colors = ['rgba(0, 150, 136, 0.6)', 'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'];
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labelsSorted,
+                    datasets: [{
+                        label: label,
+                        data: dataSorted,
+                        backgroundColor: (context) => {
+                            const value = context.dataset.data[context.dataIndex];
+                            if (value === -Infinity || value === Infinity) return 'rgba(128, 128, 128, 0.6)';
+                            return colors[context.dataIndex % colors.length];
+                        },
+                        borderColor: 'rgba(0, 0, 0, 0.2)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: label.split(' ')[0]
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: title
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchAndProcessData() {
+            updateDateTimeInfo();
+
+            const LOADING_ANIMATION = document.getElementById('loading');
+            const DATA_CONTAINER = document.getElementById('data-container');
+            const DATA_TABLES_CONTAINER = document.getElementById('data-tables-container');
+            const DATA_SOURCE_INFO = document.getElementById('dataSourceInfo');
+
+            LOADING_ANIMATION.style.display = 'block';
+            DATA_CONTAINER.style.display = 'none';
+            DATA_TABLES_CONTAINER.style.display = 'none';
+            DATA_SOURCE_INFO.style.display = 'none';
+
+            const today = new Date();
+            const yesterday = new Date();
+            yesterday.setDate(today.getDate() - 1);
+
+            const todayFormatted = formatDate(today);
+            const yesterdayFormatted = formatDate(yesterday);
+
+            const requestsToday = [];
+            for (let i = 0; i <= 2300; i += 100) {
+                requestsToday.push(fetchHourData(todayFormatted, String(i).padStart(4, '0')));
+            }
+            const allDataToday = (await Promise.all(requestsToday)).flat();
+            const validDataToday = allDataToday.filter(d => d && Object.keys(d).length > 0);
+
+            const requestsYesterday = [];
+            for (let i = 1300; i <= 2300; i += 100) {
+                requestsYesterday.push(fetchHourData(yesterdayFormatted, String(i).padStart(4, '0')));
+            }
+            const allDataYesterday = (await Promise.all(requestsYesterday)).flat();
+            const validDataYesterday = allDataYesterday.filter(d => d && Object.keys(d).length > 0);
+
+            const allData = [...validDataToday, ...validDataYesterday];
+
+            if (allData.length === 0) {
+                LOADING_ANIMATION.innerHTML = `<p style="color: red;">Não foi possível carregar os dados. Por favor, tente novamente mais tarde.</p>`;
+                return;
+            }
+
+            const stationsData = {};
+
+            validDataToday.forEach(current => {
+                const stationId = current.CD_ESTACAO;
+                if (!stationsData[stationId]) {
+                    stationsData[stationId] = {
+                        CD_ESTACAO: stationId,
+                        DC_NOME: current.DC_NOME,
+                        UF: current.UF,
+                        TEM_MAX: -Infinity,
+                        TEM_MIN: Infinity,
+                        UMD_MAX: -Infinity,
+                        UMD_MIN: Infinity,
+                        VEN_MAX: -Infinity,
+                        CHUVA_TOTAL: 0
+                    };
+                }
+                const temMax = parseFloat(current.TEM_MAX);
+                if (!isNaN(temMax)) stationsData[stationId].TEM_MAX = Math.max(stationsData[stationId].TEM_MAX, temMax);
+                const temMin = parseFloat(current.TEM_MIN);
+                if (!isNaN(temMin)) stationsData[stationId].TEM_MIN = Math.min(stationsData[stationId].TEM_MIN, temMin);
+                const umdMax = parseFloat(current.UMD_MAX);
+                if (!isNaN(umdMax)) stationsData[stationId].UMD_MAX = Math.max(stationsData[stationId].UMD_MAX, umdMax);
+                const umdMin = parseFloat(current.UMD_MIN);
+                if (!isNaN(umdMin)) stationsData[stationId].UMD_MIN = Math.min(stationsData[stationId].UMD_MIN, umdMin);
+                const venKmh = current.VEN_RAJ ? (parseFloat(current.VEN_RAJ) * 3.6) : NaN;
+                if (!isNaN(venKmh)) stationsData[stationId].VEN_MAX = Math.max(stationsData[stationId].VEN_MAX, venKmh);
+            });
+
+            validDataYesterday.forEach(current => {
+                const stationId = current.CD_ESTACAO;
+                if (stationsData[stationId]) {
+                    stationsData[stationId].CHUVA_TOTAL += parseFloat(current.CHUVA) || 0;
+                }
+            });
+
+            validDataToday.forEach(current => {
+                const currentHour = parseInt(current.HR_MEDICAO);
+                if (currentHour >= 0 && currentHour <= 1200) {
+                    const stationId = current.CD_ESTACAO;
+                    if (stationsData[stationId]) {
+                        stationsData[stationId].CHUVA_TOTAL += parseFloat(current.CHUVA) || 0;
+                    }
+                }
+            });
+
+            const processedData = Object.values(stationsData);
+
+            const regionalSummary = {};
+            for (const [regiao, ufs] of Object.entries(REGIOES)) {
+                regionalSummary[regiao] = {
+                    region: regiao,
+                    temMax: -Infinity,
+                    temMin: Infinity,
+                    umdMax: -Infinity,
+                    umdMin: Infinity,
+                    venMax: -Infinity,
+                    chuvaTotal: 0
+                };
+                let hasData = false;
+                ufs.forEach(uf => {
+                    const stationsInUF = processedData.filter(d => d.UF === uf);
+                    if (stationsInUF.length > 0) {
+                        hasData = true;
+                        stationsInUF.forEach(station => {
+                            regionalSummary[regiao].temMax = Math.max(regionalSummary[regiao].temMax, station.TEM_MAX);
+                            regionalSummary[regiao].temMin = Math.min(regionalSummary[regiao].temMin, station.TEM_MIN);
+                            regionalSummary[regiao].umdMax = Math.max(regionalSummary[regiao].umdMax, station.UMD_MAX);
+                            regionalSummary[regiao].umdMin = Math.min(regionalSummary[regiao].umdMin, station.UMD_MIN);
+                            regionalSummary[regiao].venMax = Math.max(regionalSummary[regiao].venMax, station.VEN_MAX);
+                            regionalSummary[regiao].chuvaTotal += station.CHUVA_TOTAL;
+                        });
+                    }
+                });
+                if (!hasData) {
+                    regionalSummary[regiao] = null;
+                }
+            }
+
+            const filteredRegionalSummary = Object.values(regionalSummary).filter(Boolean);
+
+            DATA_TABLES_CONTAINER.innerHTML = '';
+
+            if (filteredRegionalSummary.length > 0) {
+                DATA_TABLES_CONTAINER.appendChild(createRegionSummaryTable(filteredRegionalSummary));
+            }
+
+            for (const [regiao, ufs] of Object.entries(REGIOES)) {
+                const regionHeader = document.createElement('h2');
+                regionHeader.className = 'region-title';
+                regionHeader.textContent = `Região ${regiao}`;
+                DATA_TABLES_CONTAINER.appendChild(regionHeader);
+
+                let foundDataInRegion = false;
+                ufs.forEach(uf => {
+                    const stationsInUF = processedData.filter(d => d.UF === uf);
+                    if (stationsInUF.length > 0) {
+                        foundDataInRegion = true;
+                        stationsInUF.sort((a, b) => {
+                            const isCapitalA = a.DC_NOME.includes(CAPITAIS[uf]);
+                            const isCapitalB = b.DC_NOME.includes(CAPITAIS[uf]);
+                            if (isCapitalA && !isCapitalB) return -1;
+                            if (!isCapitalA && isCapitalB) return 1;
+                            return a.DC_NOME.localeCompare(b.DC_NOME);
+                        });
+                        // Passando a UF para a função createUFTable, embora ela já a use internamente
+                        DATA_TABLES_CONTAINER.appendChild(createUFTable(uf, stationsInUF));
+                    }
+                });
+
+                if (!foundDataInRegion) {
+                    const noDataParagraph = document.createElement('p');
+                    noDataParagraph.textContent = 'Nenhum dado encontrado para esta região.';
+                    DATA_TABLES_CONTAINER.appendChild(noDataParagraph);
+                }
+            }
+
+            // Gerar gráficos de destaque
+            const top15Chuva = processedData
+                .filter(d => d.CHUVA_TOTAL !== undefined && d.CHUVA_TOTAL > 0)
+                .sort((a, b) => b.CHUVA_TOTAL - a.CHUVA_TOTAL)
+                .slice(0, 15);
+            createBarChart('chart-chuva-total', 'Top 15 Municípios com Maior Precipitação', 'Precipitação (mm)', top15Chuva.map(d => d.CHUVA_TOTAL), top15Chuva.map(d => `${d.DC_NOME} - ${d.UF}`));
+
+            const top15TempMax = processedData
+                .filter(d => d.TEM_MAX !== -Infinity)
+                .sort((a, b) => b.TEM_MAX - a.TEM_MAX)
+                .slice(0, 15);
+            createBarChart('chart-tem-max', 'Top 15 Municípios com Maior Temperatura Máxima', 'Temperatura (°C)', top15TempMax.map(d => d.TEM_MAX), top15TempMax.map(d => `${d.DC_NOME} - ${d.UF}`));
+
+            const top15UmidMax = processedData
+                .filter(d => d.UMD_MAX !== -Infinity)
+                .sort((a, b) => b.UMD_MAX - a.UMD_MAX)
+                .slice(0, 15);
+            createBarChart('chart-umd-max', 'Top 15 Municípios com Maior Umidade Relativa', 'Umidade (%)', top15UmidMax.map(d => d.UMD_MAX), top15UmidMax.map(d => `${d.DC_NOME} - ${d.UF}`));
+
+            const top15VenMax = processedData
+                .filter(d => d.VEN_MAX !== -Infinity)
+                .sort((a, b) => b.VEN_MAX - a.VEN_MAX)
+                .slice(0, 15);
+            createBarChart('chart-ven-max', 'Top 15 Municípios com Maior Rajada de Vento', 'Rajada de Vento (km/h)', top15VenMax.map(d => d.VEN_MAX), top15VenMax.map(d => `${d.DC_NOME} - ${d.UF}`));
+
+            const top15UmidMin = processedData
+                .filter(d => d.UMD_MIN !== Infinity)
+                .sort((a, b) => a.UMD_MIN - b.UMD_MIN)
+                .slice(0, 15);
+            createBarChart('chart-umd-min', 'Top 15 Municípios com Menor Umidade Relativa', 'Umidade (%)', top15UmidMin.map(d => d.UMD_MIN), top15UmidMin.map(d => `${d.DC_NOME} - ${d.UF}`), false);
+
+            const top15TempMin = processedData
+                .filter(d => d.TEM_MIN !== Infinity)
+                .sort((a, b) => a.TEM_MIN - b.TEM_MIN)
+                .slice(0, 15);
+            createBarChart('chart-tem-min', 'Top 15 Municípios com Menor Temperatura Mínima', 'Temperatura (°C)', top15TempMin.map(d => d.TEM_MIN), top15TempMin.map(d => `${d.DC_NOME} - ${d.UF}`), false);
+
+            addSortableTableFunctionality();
+
+            LOADING_ANIMATION.style.display = 'none';
+            DATA_CONTAINER.style.display = 'block';
+            DATA_TABLES_CONTAINER.style.display = 'block';
+            DATA_SOURCE_INFO.style.display = 'block';
+            DATA_SOURCE_INFO.textContent = `Dados de 00h às 23h para temperatura/umidade/vento do dia ${todayFormatted}. Precipitação acumulada de 13h do dia ${yesterdayFormatted} até 12h do dia ${todayFormatted}.`;
+        }
+
+        function getCellValue(tr, idx) {
+            const cell = tr.children[idx];
+            const value = cell.textContent || cell.innerText;
+            const parsedValue = parseFloat(value.replace(',', '.'));
+            return isNaN(parsedValue) ? value.trim() : parsedValue;
+        }
+
+        /**
+         * Adiciona funcionalidade de ordenação às tabelas.
+         * MODIFICADO: Ajusta os índices das colunas numéricas devido à nova coluna 'UF'.
+         */
+        function addSortableTableFunctionality() {
+            document.querySelectorAll('th[data-column-index]').forEach(headerCell => {
+                headerCell.addEventListener('click', () => {
+                    const table = headerCell.closest('table');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const isSummaryTable = table.id === 'table-summary';
+
+                    const dataRows = rows.filter(row => row.children.length > 1);
+
+                    const column = parseInt(headerCell.dataset.columnIndex);
+                    let sortOrder = headerCell.dataset.sortOrder;
+
+                    sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+                    headerCell.dataset.sortOrder = sortOrder;
+
+                    headerCell.closest('tr').querySelectorAll('th').forEach(th => {
+                        if (th !== headerCell) {
+                            th.dataset.sortOrder = '';
+                        }
+                    });
+
+                    // Índices de colunas que contêm dados numéricos
+                    // No Resumo (table-summary), os índices permanecem os mesmos: [1, 2, 3, 4, 5, 6]
+                    // Nas tabelas de UF (stations), a coluna 'UF' está no índice 1, deslocando as numéricas: [2, 3, 4, 5, 6, 7]
+                    const numericColumnsSummary = [1, 2, 3, 4, 5, 6];
+                    const numericColumnsStations = [2, 3, 4, 5, 6, 7];
+
+                    const isNumeric = isSummaryTable
+                        ? numericColumnsSummary.includes(column)
+                        : numericColumnsStations.includes(column);
+
+                    dataRows.sort((a, b) => {
+                        let valA = getCellValue(a, column);
+                        let valB = getCellValue(b, column);
+
+                        if (isNumeric) {
+                            // Tratar valores não-numéricos (como '-') para ordenação
+                            valA = typeof valA === 'number' ? valA : (sortOrder === 'asc' ? Infinity : -Infinity);
+                            valB = typeof valB === 'number' ? valB : (sortOrder === 'asc' ? Infinity : -Infinity);
+                        } else {
+                            valA = String(valA);
+                            valB = String(valB);
+                        }
+
+                        const comparison = isNumeric ? valA - valB : valA.localeCompare(valB, 'pt-BR');
+                        return sortOrder === 'asc' ? comparison : -comparison;
+                    });
+
+                    tbody.innerHTML = '';
+                    dataRows.forEach(row => tbody.appendChild(row));
+
+                    // Reaplicar a linha da capital no topo (se for tabela de UF)
+                    if (!isSummaryTable) {
+                        const ufTitle = headerCell.closest('div').querySelector('.uf-title');
+                        if (ufTitle) {
+                            const uf = ufTitle.textContent.trim();
+                            const capitalRow = rows.find(row => row.classList.contains('capital-row'));
+                            if (capitalRow) {
+                                tbody.prepend(capitalRow);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchAndProcessData);
+    </script>
+</body>
+</html>
