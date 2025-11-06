@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <title>DADOS METEOROLÓGICOS DETALHADOS POR REGIÃO</title>
+    <title id="pageTitle">DADOS METEOROLÓGICOS DETALHADOS POR REGIÃO</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="900">
@@ -102,92 +102,106 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-        /* Estilos para o Seletor de Data */
-        .date-selector-container {
+        /* Novo estilo para destacar o aviso no topo da seção de dados */
+        .data-info-top {
+            font-size: 0.9em;
+            color: #4CAF50;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 4px;
             text-align: center;
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #e0f2f1;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        .date-selector-container label {
-            font-weight: bold;
-            color: #004d40;
-            margin-right: 10px;
+        /* Estilos para o seletor de idioma */
+        .language-selector {
+            text-align: right;
+            margin-bottom: 10px;
         }
-        .date-selector-container input[type="date"] {
-            padding: 8px;
-            border: 1px solid #009688;
-            border-radius: 4px;
-            font-size: 1em;
-            margin-right: 10px;
-        }
-        .date-selector-container button {
-            padding: 8px 15px;
-            background-color: #009688;
-            color: white;
-            border: none;
-            border-radius: 4px;
+        .lang-button {
+            background: none;
+            border: 1px solid #ccc;
+            padding: 5px 8px;
+            margin-left: 5px;
             cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s;
+            border-radius: 4px;
+            opacity: 0.6;
+            transition: opacity 0.2s, border-color 0.2s;
         }
-        .date-selector-container button:hover {
-            background-color: #00796b;
+        .lang-button:hover {
+            opacity: 1;
+            border-color: #009688;
+        }
+        .lang-button.active {
+            opacity: 1;
+            border-color: #00796b;
+            background-color: #e0f2f1;
+        }
+        .lang-button img {
+            width: 20px;
+            height: 15px;
+            vertical-align: middle;
         }
     </style>
 </head>
-<body>
+<body onload="setLanguage('pt')">
     <div class="container">
-        <h1>Dados Meteorológicos por Estação e Região</h1>
-        <p>Dados de todas as estações do INMET no Brasil.</p>
+        <div class="language-selector">
+            <button class="lang-button active" onclick="setLanguage('pt')" id="lang-pt" title="Português">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJQAAACUCAMAAABC4vDmAAAAw1BMVEVzrwD/////4VpBR5tsrAC915319fVvrgD/5Fj/410/RZo8Q5z/5lf4+PfJtXDEyzmwxSvs02HTvW1MT5j02F3p0GXexmj431qzo3lXWJUyPJxoZ49SVJagkoIqN50gMKBkYpLe68jR47Z6shiNuBmdvSLa1Ebu2lC3xjLk10nCr3OCtBPj5OysnHxLUaGoq82RlMBxdbKFiLvUx5tnbK2+v9h7f7fo3rjMzt/4327q6OOho8rv36Db0bRbYajY2OX643xDigwsAAAFMElEQVR4nO2bD3OiOhTFU+EBJuKf1tY2ttZdFetKAXnSpcs+3O//qV6CYFWCxF2omdmc6ew4nS7zm5PDvTcBwZWAApcGYElC8UpC8UpC8UpC8UpC8UpC8UpC8UpC8UpC8UpC8UpC8UpQqC//CKYvV+DrRBVMk69gogPBpE8uTSAlJSX1l0sXrjUAHUynQCwsXZ1ZjYY1UwXC0qedRqLOVBQqXe/OG6nmXTGipU4XjT0tpuqliYAKOo3mPlSz0QGXxdLBy/wAKcGav1zwPtTVqdXIMVGzrOml7kN10hkwkBKsQWdyiTUkpWnBJkoDf4GipU+tZoFNqVlN65OLlgq6+YDnA9/9zPtQn83LiLaazz6rlqrAMkptSs0yrE8xi5Qmxj1npMpjDeovWrQ0HSMZRqvfu71rt+9ue/1WDqxZd9FSp53jamkYvfbTUBk9E42U4VO7d4xFGk+N/VAH3VzAW/3XsYIQVBJBhJTxa791/FfkPqzJrKNxILFpcP+AM6KMCz/cD3Lhqmd40I/HAcrUG2Kk5ITwsJePfKdys3RWtTSuH3EeiQo/XueomlWvIeOeI0zfbhg2pWbdfGOUB6vCNSSDHKOpGNfFTJQq7xUxq6oBUNeZ44DRezzBRKgeGbmiw0MVjUctGAcG4xFKBCGbCg8HjP/WrGAN9SWrqVCj/o08In+1jh0Fof2ykH3E97l6lWANXpZ/YlbxIGe8a/TA29Rs294Ervfm4LReQSezDj30WQvY+LMBUF1a7IsSfde2MrfSNqG3chLDwiDzCr8WQJHN9PL31lBVGTuVTO8/tEMRLtMOVhjjKMqKFxozs56s4fxFPR9LB7NF8dBk/NTMzKV9MFML3uAuX1BpF1rVaC5m59ZSdVm4U0mg/gvDMAg3JFG2SaL1QWZqoe/gLFVPzKinVIPOWWvIbCr76o9HmIoMBfHKi4KNre3ATNN2461baNg/dZWzGo+6PLl5ooVzd9+TYYX0ZGftuRvzytxheSOKBZXCUKVacJvVOX0hAnU72i9ICoRkYEFOtMn8Ilg+cVEZ3ZZA0eGBS4zeewx197w16aCEQ4xXkb3DCmKsPN+VQjUtDiR9VnYZAtWmUI7rH3U/6pcfaimW5qPnE7ffTrPyXJ0BFa3ybQ8ixw+3bpmaO6oI6szly7djYtdqs828GVa0fIA36Fsm0o7TrB+4FaVr+KuqoPOWBNcj/4ZRlqt9yyCOQ8pkv1dWEsjAUlY8h6QMBS6ZpeKbLYYbHYYeOS4x60dZ8TxriClpM60nguA4H8uGwwgfpgtiX9O+nzDq3DYDShtym6wW4dk1X+jQX+zHivy82T8rbcjg9Ohi9MYoQYnij3AHu0asoJXv0IG4MFK/N7okWMVDnvFKhybkX7lKOm/6keZ6TjbeuZsbWMeQB06Ow/0HlDj1htI7z6OdJYOC8bqucRic2Di07pP5EqVFCkEcmnZMQVESNVTbxoGqcIs13G3ZYRx4JFLrgNgGYy9Gsa/UucUCPJtR6BAo4hpBIhHX1tgPYL2bUVC+bYfONlcw+bxy6Keat+0J1ukDDrjX+ZJMwfoPOICYR0FAyEMzKgGPF4GYB7FAyCNrIObhPhDyMQiVgA+MQNJ4hHu0BsR8CAmEfFwLxHywDYR8BQCI+bIEEPK1EioBX8BJsMR7VQmI+VIXEPL1NyDmi4JAyFcqqYQJk5SUlNTfKiG/ICbkV+mE/NLhpb+KyZKE4pWE4pWE4pWE4pWE4pWE4pWE4pWE4pWE4pWE4pWE4pWE4tX/ywe6Ts+gllcAAAAASUVORK5CYII=" alt="Bandeira do Brasil"> PT
+            </button>
+            <button class="lang-button" onclick="setLanguage('es')" id="lang-es" title="Español">
+                <img src="data:image/png;base64,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" alt="Bandera de España"> ES
+            </button>
+            <button class="lang-button" onclick="setLanguage('en')" id="lang-en" title="English">
+                <img src="data:image/png;base64,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" alt="Flag of United Kingdom"> EN
+            </button>
+        </div>
+        <h1 id="mainTitle">Dados Meteorológicos por Estação e Região</h1>
+        <p id="subTitle">Dados de todas as estações do INMET no Brasil.</p>
 
         <div class="header-info">
             <p id="currentDateTime"></p>
             <p id="lastRefreshTime"></p>
         </div>
 
-        <div class="date-selector-container">
-            <label for="date-input">Buscar dados do dia:</label>
-            <input type="date" id="date-input">
-            <button id="search-button">Buscar</button>
-        </div>
         <div class="loading-animation" id="loading">
             <img src="https://i.imgur.com/u7sA5mF.gif" alt="Carregando...">
-            <p>Carregando dados, por favor aguarde...</p>
+            <p id="loadingText">Carregando dados, por favor aguarde...</p>
         </div>
 
         <div id="data-container" style="display: none;">
-            <h2 class="region-title">Gráficos de Destaque</h2>
+            <div id="dataSourceInfoTop" class="data-source-info data-info-top" style="display: none;"></div>
+            
+            <h2 class="region-title" id="chartHeader">Gráficos de Destaque</h2>
             <div class="chart-container">
-                <h3>Top 15 Municípios com Maior Precipitação</h3>
+                <h3 id="chartTitleChuva">Top 15 Municípios com Maior Precipitação</h3>
                 <canvas id="chart-chuva-total"></canvas>
             </div>
             <div class="chart-container">
-                <h3>Top 15 Municípios com Maior Temperatura Máxima</h3>
+                <h3 id="chartTitleTempMax">Top 15 Municípios com Maior Temperatura Máxima</h3>
                 <canvas id="chart-tem-max"></canvas>
             </div>
             <div class="chart-container">
-                <h3>Top 15 Municípios com Maior Umidade Relativa</h3>
+                <h3 id="chartTitleUmdMax">Top 15 Municípios com Maior Umidade Relativa</h3>
                 <canvas id="chart-umd-max"></canvas>
             </div>
             <div class="chart-container">
-                <h3>Top 15 Municípios com Maior Rajada de Vento</h3>
+                <h3 id="chartTitleVenMax">Top 15 Municípios com Maior Rajada de Vento</h3>
                 <canvas id="chart-ven-max"></canvas>
             </div>
             <div class="chart-container">
-                <h3>Top 15 Municípios com Menor Umidade Relativa</h3>
+                <h3 id="chartTitleUmdMin">Top 15 Municípios com Menor Umidade Relativa</h3>
                 <canvas id="chart-umd-min"></canvas>
             </div>
             <div class="chart-container">
-                <h3>Top 15 Municípios com Menor Temperatura Mínima</h3>
+                <h3 id="chartTitleTempMin">Top 15 Municípios com Menor Temperatura Mínima</h3>
                 <canvas id="chart-tem-min"></canvas>
             </div>
         </div>
 
         <div id="data-tables-container"></div>
-        <div id="dataSourceInfo" class="data-source-info" style="display: none;"></div>
+        <div id="dataSourceInfoBottom" class="data-source-info" style="display: none;"></div>
     </div>
     <script>
         const API_BASE_URL = "https://apitempo.inmet.gov.br/token/estacao/dados";
@@ -211,6 +225,158 @@
             'SE': 'Aracaju', 'SP': 'São Paulo', 'TO': 'Palmas'
         };
 
+        // --- OBJETOS DE TRADUÇÃO ---
+        const translations = {
+            'pt': {
+                pageTitle: 'DADOS METEOROLÓGICOS DETALHADOS POR REGIÃO',
+                mainTitle: 'Dados Meteorológicos por Estação e Região',
+                subTitle: 'Dados de todas as estações do INMET no Brasil.',
+                loadingText: 'Carregando dados, por favor aguarde...',
+                currentDateTime: 'Data e Hora Atual',
+                lastRefreshTime: 'Última atualização da página',
+                chartHeader: 'Gráficos de Destaque',
+                chartTitleChuva: 'Top 15 Municípios com Maior Precipitação',
+                chartTitleTempMax: 'Top 15 Municípios com Maior Temperatura Máxima',
+                chartTitleUmdMax: 'Top 15 Municípios com Maior Umidade Relativa',
+                chartTitleVenMax: 'Top 15 Municípios com Maior Rajada de Vento',
+                chartTitleUmdMin: 'Top 15 Municípios com Menor Umidade Relativa',
+                chartTitleTempMin: 'Top 15 Municípios com Menor Temperatura Mínima',
+                regionHeader: 'Região',
+                summaryHeader: 'Resumo por Região',
+                ufNoData: 'Nenhum dado encontrado para esta UF.',
+                regionNoData: 'Nenhum dado encontrado para esta região.',
+                sourceText: (today, yesterday) => `Dados de 00h às 23h para temperatura/umidade/vento do dia ${today}. Precipitação acumulada de 13h do dia ${yesterday} até 12h do dia ${today}.`,
+                tableHeaders: {
+                    station: 'Estação',
+                    uf: 'UF',
+                    tempMax: 'Temp. Máxima (°C)',
+                    tempMin: 'Temp. Mínima (°C)',
+                    umdMax: 'Umid. Máxima (%)',
+                    umdMin: 'Umid. Mínima (%)',
+                    venMax: 'Vento Máximo (km/h)',
+                    chuvaTotal: 'Chuva Total (mm)',
+                    region: 'Região'
+                },
+                chartLabels: {
+                    chuva: 'Precipitação (mm)',
+                    temp: 'Temperatura (°C)',
+                    umd: 'Umidade (%)',
+                    vento: 'Rajada de Vento (km/h)'
+                }
+            },
+            'es': {
+                pageTitle: 'DATOS METEOROLÓGICOS DETALLADOS POR REGIÓN',
+                mainTitle: 'Datos Meteorológicos por Estación y Región',
+                subTitle: 'Datos de todas las estaciones de INMET en Brasil.',
+                loadingText: 'Cargando datos, por favor espere...',
+                currentDateTime: 'Fecha y Hora Actual',
+                lastRefreshTime: 'Última actualización de la página',
+                chartHeader: 'Gráficos Destacados',
+                chartTitleChuva: 'Top 15 Municipios con Mayor Precipitación',
+                chartTitleTempMax: 'Top 15 Municipios con Mayor Temperatura Máxima',
+                chartTitleUmdMax: 'Top 15 Municipios con Mayor Humedad Relativa',
+                chartTitleVenMax: 'Top 15 Municipios con Mayor Ráfaga de Viento',
+                chartTitleUmdMin: 'Top 15 Municipios con Menor Humedad Relativa',
+                chartTitleTempMin: 'Top 15 Municipios con Menor Temperatura Mínima',
+                regionHeader: 'Región',
+                summaryHeader: 'Resumen por Región',
+                ufNoData: 'No se encontraron datos para este estado.',
+                regionNoData: 'No se encontraron datos para esta región.',
+                sourceText: (today, yesterday) => `Datos de 00h a 23h para temperatura/humedad/viento del día ${today}. Precipitación acumulada de 13h del día ${yesterday} hasta 12h del día ${today}.`,
+                tableHeaders: {
+                    station: 'Estación',
+                    uf: 'Estado (UF)',
+                    tempMax: 'Temp. Máxima (°C)',
+                    tempMin: 'Temp. Mínima (°C)',
+                    umdMax: 'Hum. Máxima (%)',
+                    umdMin: 'Hum. Mínima (%)',
+                    venMax: 'Viento Máximo (km/h)',
+                    chuvaTotal: 'Lluvia Total (mm)',
+                    region: 'Región'
+                },
+                chartLabels: {
+                    chuva: 'Precipitación (mm)',
+                    temp: 'Temperatura (°C)',
+                    umd: 'Humedad (%)',
+                    vento: 'Ráfaga de Viento (km/h)'
+                }
+            },
+            'en': {
+                pageTitle: 'DETAILED METEOROLOGICAL DATA BY REGION',
+                mainTitle: 'Meteorological Data by Station and Region',
+                subTitle: 'Data from all INMET stations in Brazil.',
+                loadingText: 'Loading data, please wait...',
+                currentDateTime: 'Current Date and Time',
+                lastRefreshTime: 'Last page refresh',
+                chartHeader: 'Featured Charts',
+                chartTitleChuva: 'Top 15 Municipalities with Highest Rainfall',
+                chartTitleTempMax: 'Top 15 Municipalities with Highest Maximum Temperature',
+                chartTitleUmdMax: 'Top 15 Municipalities with Highest Relative Humidity',
+                chartTitleVenMax: 'Top 15 Municipalities with Highest Wind Gust',
+                chartTitleUmdMin: 'Top 15 Municipalities with Lowest Relative Humidity',
+                chartTitleTempMin: 'Top 15 Municipalities with Lowest Minimum Temperature',
+                regionHeader: 'Region',
+                summaryHeader: 'Summary by Region',
+                ufNoData: 'No data found for this state.',
+                regionNoData: 'No data found for this region.',
+                sourceText: (today, yesterday) => `Data from 00h to 23h for temperature/humidity/wind on ${today}. Accumulated rainfall from 13h on ${yesterday} to 12h on ${today}.`,
+                tableHeaders: {
+                    station: 'Station',
+                    uf: 'State (UF)',
+                    tempMax: 'Max Temp. (°C)',
+                    tempMin: 'Min Temp. (°C)',
+                    umdMax: 'Max Hum. (%)',
+                    umdMin: 'Min Hum. (%)',
+                    venMax: 'Max Wind (km/h)',
+                    chuvaTotal: 'Total Rainfall (mm)',
+                    region: 'Region'
+                },
+                chartLabels: {
+                    chuva: 'Rainfall (mm)',
+                    temp: 'Temperature (°C)',
+                    umd: 'Humidity (%)',
+                    vento: 'Wind Gust (km/h)'
+                }
+            }
+        };
+
+        let currentLang = 'pt';
+        
+        // --- FUNÇÃO PARA TROCA DE IDIOMA (NOVO) ---
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+
+            // 1. Atualizar HTML estático
+            document.getElementById('pageTitle').textContent = t.pageTitle;
+            document.getElementById('mainTitle').textContent = t.mainTitle;
+            document.getElementById('subTitle').textContent = t.subTitle;
+            document.getElementById('loadingText').textContent = t.loadingText;
+            document.getElementById('chartHeader').textContent = t.chartHeader;
+            document.getElementById('chartTitleChuva').textContent = t.chartTitleChuva;
+            document.getElementById('chartTitleTempMax').textContent = t.chartTitleTempMax;
+            document.getElementById('chartTitleUmdMax').textContent = t.chartTitleUmdMax;
+            document.getElementById('chartTitleVenMax').textContent = t.chartTitleVenMax;
+            document.getElementById('chartTitleUmdMin').textContent = t.chartTitleUmdMin;
+            document.getElementById('chartTitleTempMin').textContent = t.chartTitleTempMin;
+
+            // 2. Atualizar Botões Ativos
+            document.querySelectorAll('.lang-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`lang-${lang}`).classList.add('active');
+
+            // 3. Re-renderizar dados dinâmicos (e tabelas) se já estiverem carregados
+            if (document.getElementById('data-container').style.display !== 'none') {
+                // Remove as tabelas antigas e recarrega os dados com o novo idioma.
+                // Requisitar os dados novamente não é necessário, apenas renderizá-los.
+                // A função fetchAndProcessData será chamada, mas ela verifica se os dados já existem.
+                fetchAndProcessData(true); 
+            } else {
+                // Atualizar textos de data e rodapé (se o idioma mudar antes do carregamento)
+                updateDateTimeInfo();
+            }
+        }
+        // --- FIM FUNÇÃO PARA TROCA DE IDIOMA ---
+
         function formatDate(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -226,23 +392,11 @@
         }
 
         function updateDateTimeInfo() {
+            const t = translations[currentLang];
             const now = new Date();
             const lastRefresh = new Date(performance.timing.navigationStart);
-            document.getElementById('currentDateTime').textContent = `Data e Hora Atual: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-            document.getElementById('lastRefreshTime').textContent = `Última atualização da página: ${formatTime(lastRefresh)}`;
-        }
-
-        /**
-         * Limpa todos os gráficos existentes antes de criar novos.
-         */
-        function destroyExistingCharts() {
-            const chartIds = ['chart-chuva-total', 'chart-tem-max', 'chart-umd-max', 'chart-ven-max', 'chart-umd-min', 'chart-tem-min'];
-            chartIds.forEach(id => {
-                const canvas = document.getElementById(id);
-                if (canvas && canvas.chart) {
-                    canvas.chart.destroy();
-                }
-            });
+            document.getElementById('currentDateTime').textContent = `${t.currentDateTime}: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+            document.getElementById('lastRefreshTime').textContent = `${t.lastRefreshTime}: ${formatTime(lastRefresh)}`;
         }
 
         async function fetchHourData(dateString, hour) {
@@ -250,9 +404,6 @@
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
-                    // Tenta ler o corpo da resposta em caso de erro, se disponível
-                    const errorText = await response.text();
-                    console.error(`Falha na resposta da rede (${response.status} ${response.statusText}) para ${url}: ${errorText}`);
                     throw new Error('Falha na resposta da rede');
                 }
                 const data = await response.json();
@@ -265,15 +416,28 @@
 
         /**
          * Cria a tabela de estações para uma UF específica.
+         * MODIFICADO: Usa os headers traduzidos.
          */
         function createUFTable(uf, stations) {
+            const t = translations[currentLang];
             const ufContainer = document.createElement('div');
             ufContainer.innerHTML = `<h3 class="uf-title">${uf}</h3>`;
 
             const table = document.createElement('table');
             table.id = `table-${uf}`;
             const thead = document.createElement('thead');
-            const headers = ['Estação', 'UF', 'Temp. Máxima (°C)', 'Temp. Mínima (°C)', 'Umid. Máxima (%)', 'Umid. Mínima (%)', 'Vento Máximo (km/h)', 'Chuva Total (mm)'];
+            
+            // Usando os headers traduzidos do objeto
+            const headers = [
+                t.tableHeaders.station, 
+                t.tableHeaders.uf, 
+                t.tableHeaders.tempMax, 
+                t.tableHeaders.tempMin, 
+                t.tableHeaders.umdMax, 
+                t.tableHeaders.umdMin, 
+                t.tableHeaders.venMax, 
+                t.tableHeaders.chuvaTotal
+            ];
             const headerRow = document.createElement('tr');
 
             headers.forEach((text, index) => {
@@ -291,7 +455,7 @@
                 const row = document.createElement('tr');
                 const cell = document.createElement('td');
                 cell.colSpan = headers.length;
-                cell.textContent = "Nenhum dado encontrado para esta UF.";
+                cell.textContent = t.ufNoData;
                 row.appendChild(cell);
                 tbody.appendChild(row);
             } else {
@@ -300,7 +464,7 @@
                     if (CAPITAIS[uf] && station.DC_NOME.includes(CAPITAIS[uf])) {
                         row.classList.add('capital-row');
                     }
-
+                    
                     const values = [
                         station.DC_NOME,
                         station.UF,
@@ -325,14 +489,28 @@
             return ufContainer;
         }
 
+        /**
+         * Cria a tabela de resumo regional.
+         * MODIFICADO: Usa os headers traduzidos.
+         */
         function createRegionSummaryTable(regionalData) {
+            const t = translations[currentLang];
             const tableContainer = document.createElement('div');
-            tableContainer.innerHTML = `<h2 class="region-title">Resumo por Região</h2>`;
+            tableContainer.innerHTML = `<h2 class="region-title">${t.summaryHeader}</h2>`;
             const table = document.createElement('table');
             table.id = 'table-summary';
 
             const thead = document.createElement('thead');
-            const headers = ['Região', 'Temp. Máxima (°C)', 'Temp. Mínima (°C)', 'Umid. Máxima (%)', 'Umid. Mínima (%)', 'Vento Máximo (km/h)', 'Chuva Total (mm)'];
+            // Usando os headers traduzidos do objeto
+            const headers = [
+                t.tableHeaders.region, 
+                t.tableHeaders.tempMax, 
+                t.tableHeaders.tempMin, 
+                t.tableHeaders.umdMax, 
+                t.tableHeaders.umdMin, 
+                t.tableHeaders.venMax, 
+                t.tableHeaders.chuvaTotal
+            ];
             const headerRow = document.createElement('tr');
             headers.forEach((text, index) => {
                 const th = document.createElement('th');
@@ -369,34 +547,52 @@
             return tableContainer;
         }
 
-        function createBarChart(elementId, title, label, data, labels, isDesc = true) {
-            const ctx = document.getElementById(elementId).getContext('2d');
-            
-            // Certifique-se de que nenhum gráfico anterior com o mesmo ID está ativo
-            const canvas = document.getElementById(elementId);
-            if (canvas.chart) {
-                canvas.chart.destroy();
+        /**
+         * Cria gráfico de barras.
+         * MODIFICADO: Usa os títulos e labels traduzidos.
+         */
+        function createBarChart(elementId, titleKey, labelKey, data, labels, isDesc = true) {
+            const t = translations[currentLang];
+            // Destrói o gráfico anterior (se existir) para evitar duplicação ou conflito de dados
+            const oldChart = Chart.getChart(elementId);
+            if (oldChart) {
+                oldChart.destroy();
             }
-            
+
+            const ctx = document.getElementById(elementId).getContext('2d');
             const dataSorted = data.slice();
             const labelsSorted = labels.slice();
 
-            // Lógica de ordenação (simplificada, pois o Chart.js não tem ordenação nativa simples)
-            const sortedPairs = labelsSorted.map((label, i) => ({ label, data: dataSorted[i] }));
-            sortedPairs.sort((a, b) => isDesc ? b.data - a.data : a.data - b.data);
+            // Reordenar os dados para o gráfico (Top 15)
+            if (isDesc) {
+                const sortedPairs = labelsSorted.map((label, i) => ({ label, data: dataSorted[i] })).sort((a, b) => b.data - a.data);
+                labelsSorted.length = 0;
+                dataSorted.length = 0;
+                sortedPairs.forEach(pair => {
+                    labelsSorted.push(pair.label);
+                    dataSorted.push(pair.data);
+                });
+            } else {
+                const sortedPairs = labelsSorted.map((label, i) => ({ label, data: dataSorted[i] })).sort((a, b) => a.data - b.data);
+                labelsSorted.length = 0;
+                dataSorted.length = 0;
+                sortedPairs.forEach(pair => {
+                    labelsSorted.push(pair.label);
+                    dataSorted.push(pair.data);
+                });
+            }
 
-            const finalLabels = sortedPairs.map(pair => pair.label);
-            const finalData = sortedPairs.map(pair => pair.data);
+            const labelText = t.chartLabels[labelKey];
 
             const colors = ['rgba(0, 150, 136, 0.6)', 'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'];
 
-            canvas.chart = new Chart(ctx, { // Armazena a instância do gráfico no canvas
+            new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: finalLabels.slice(0, 15),
+                    labels: labelsSorted,
                     datasets: [{
-                        label: label,
-                        data: finalData.slice(0, 15),
+                        label: labelText,
+                        data: dataSorted,
                         backgroundColor: (context) => {
                             const value = context.dataset.data[context.dataIndex];
                             if (value === -Infinity || value === Infinity) return 'rgba(128, 128, 128, 0.6)';
@@ -414,7 +610,7 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: label.split(' ')[0]
+                                text: labelText
                             }
                         }
                     },
@@ -424,250 +620,281 @@
                         },
                         title: {
                             display: true,
-                            text: title
+                            text: translations[currentLang][titleKey]
                         }
                     }
                 }
             });
         }
+        
+        // Armazenar dados processados para não recarregar em troca de idioma
+        let cachedProcessedData = null;
+        let cachedRegionalSummary = null;
 
         /**
-         * Função principal de requisição e processamento, agora aceita a data.
-         * @param {string} selectedDateString - Data selecionada no formato YYYY-MM-DD. Se vazio, usa a data atual.
+         * Função principal de carregamento e processamento.
+         * MODIFICADO: Aceita um argumento 'reRender' para saber se é apenas uma troca de idioma.
          */
-        async function fetchAndProcessData(selectedDateString = null) {
+        async function fetchAndProcessData(reRender = false) {
             updateDateTimeInfo();
 
             const LOADING_ANIMATION = document.getElementById('loading');
             const DATA_CONTAINER = document.getElementById('data-container');
             const DATA_TABLES_CONTAINER = document.getElementById('data-tables-container');
-            const DATA_SOURCE_INFO = document.getElementById('dataSourceInfo');
-            const SEARCH_BUTTON = document.getElementById('search-button');
+            const DATA_SOURCE_INFO_BOTTOM = document.getElementById('dataSourceInfoBottom');
+            const DATA_SOURCE_INFO_TOP = document.getElementById('dataSourceInfoTop');
 
-            // Limpa gráficos anteriores
-            destroyExistingCharts();
-            DATA_TABLES_CONTAINER.innerHTML = '';
-            DATA_SOURCE_INFO.style.display = 'none';
+            let processedData = cachedProcessedData;
+            let filteredRegionalSummary = cachedRegionalSummary;
+            
+            if (!reRender) {
+                // Primeira carga ou recarga completa (não apenas troca de idioma)
+                LOADING_ANIMATION.style.display = 'block';
+                DATA_CONTAINER.style.display = 'none';
+                DATA_TABLES_CONTAINER.style.display = 'none';
+                DATA_SOURCE_INFO_BOTTOM.style.display = 'none';
+                DATA_SOURCE_INFO_TOP.style.display = 'none';
 
-            LOADING_ANIMATION.style.display = 'block';
-            DATA_CONTAINER.style.display = 'none';
-            DATA_TABLES_CONTAINER.style.display = 'none';
-            SEARCH_BUTTON.disabled = true; // Desabilita o botão durante a busca
+                const today = new Date();
+                const yesterday = new Date();
+                yesterday.setDate(today.getDate() - 1);
 
-            let targetDate, yesterday;
+                const todayFormatted = formatDate(today);
+                const yesterdayFormatted = formatDate(yesterday);
 
-            if (selectedDateString) {
-                // Se uma data foi selecionada, use-a para a busca.
-                targetDate = new Date(selectedDateString + 'T12:00:00'); // Adiciona um horário para evitar problemas de fuso horário
-                yesterday = new Date(targetDate);
-                yesterday.setDate(targetDate.getDate() - 1);
-            } else {
-                // Comportamento padrão: hoje e ontem.
-                targetDate = new Date();
-                yesterday = new Date();
-                yesterday.setDate(targetDate.getDate() - 1);
-                // Preenche o campo de data com a data atual (padrão)
-                document.getElementById('date-input').value = formatDate(targetDate);
-            }
+                // Lógica de fetch de dados (mantida) ...
 
-            const targetDateFormatted = formatDate(targetDate);
-            const yesterdayFormatted = formatDate(yesterday);
-
-            // Fetch dos dados: 00h às 23h da data alvo
-            const requestsTarget = [];
-            for (let i = 0; i <= 2300; i += 100) {
-                requestsTarget.push(fetchHourData(targetDateFormatted, String(i).padStart(4, '0')));
-            }
-            const allDataTarget = (await Promise.all(requestsTarget)).flat();
-            const validDataTarget = allDataTarget.filter(d => d && Object.keys(d).length > 0);
-
-            // Fetch dos dados de precipitação: 13h às 23h da data anterior
-            const requestsYesterday = [];
-            for (let i = 1300; i <= 2300; i += 100) {
-                requestsYesterday.push(fetchHourData(yesterdayFormatted, String(i).padStart(4, '0')));
-            }
-            const allDataYesterday = (await Promise.all(requestsYesterday)).flat();
-            const validDataYesterday = allDataYesterday.filter(d => d && Object.keys(d).length > 0);
-
-            const allData = [...validDataTarget, ...validDataYesterday];
-
-            if (allData.length === 0) {
-                LOADING_ANIMATION.innerHTML = `<p style="color: red;">Não foi possível carregar os dados para ${targetDateFormatted}. Por favor, verifique a data ou tente novamente mais tarde.</p>`;
-                SEARCH_BUTTON.disabled = false;
-                return;
-            }
-
-            const stationsData = {};
-
-            // Processamento dos dados (máximas/mínimas do dia alvo)
-            validDataTarget.forEach(current => {
-                const stationId = current.CD_ESTACAO;
-                if (!stationsData[stationId]) {
-                    stationsData[stationId] = {
-                        CD_ESTACAO: stationId,
-                        DC_NOME: current.DC_NOME,
-                        UF: current.UF,
-                        TEM_MAX: -Infinity,
-                        TEM_MIN: Infinity,
-                        UMD_MAX: -Infinity,
-                        UMD_MIN: Infinity,
-                        VEN_MAX: -Infinity,
-                        CHUVA_TOTAL: 0 // A chuva será calculada no loop seguinte
-                    };
+                const requestsToday = [];
+                for (let i = 0; i <= 2300; i += 100) {
+                    requestsToday.push(fetchHourData(todayFormatted, String(i).padStart(4, '0')));
                 }
-                const temMax = parseFloat(current.TEM_MAX);
-                if (!isNaN(temMax)) stationsData[stationId].TEM_MAX = Math.max(stationsData[stationId].TEM_MAX, temMax);
-                const temMin = parseFloat(current.TEM_MIN);
-                if (!isNaN(temMin)) stationsData[stationId].TEM_MIN = Math.min(stationsData[stationId].TEM_MIN, temMin);
-                const umdMax = parseFloat(current.UMD_MAX);
-                if (!isNaN(umdMax)) stationsData[stationId].UMD_MAX = Math.max(stationsData[stationId].UMD_MAX, umdMax);
-                const umdMin = parseFloat(current.UMD_MIN);
-                if (!isNaN(umdMin)) stationsData[stationId].UMD_MIN = Math.min(stationsData[stationId].UMD_MIN, umdMin);
-                const venKmh = current.VEN_RAJ ? (parseFloat(current.VEN_RAJ) * 3.6) : NaN;
-                if (!isNaN(venKmh)) stationsData[stationId].VEN_MAX = Math.max(stationsData[stationId].VEN_MAX, venKmh);
-            });
+                const allDataToday = (await Promise.all(requestsToday)).flat();
+                const validDataToday = allDataToday.filter(d => d && Object.keys(d).length > 0);
 
-            // Acumular Precipitação - Parte de 13h a 23h do dia anterior
-            validDataYesterday.forEach(current => {
-                const stationId = current.CD_ESTACAO;
-                if (stationsData[stationId]) {
-                    stationsData[stationId].CHUVA_TOTAL += parseFloat(current.CHUVA) || 0;
+                const requestsYesterday = [];
+                for (let i = 1300; i <= 2300; i += 100) {
+                    requestsYesterday.push(fetchHourData(yesterdayFormatted, String(i).padStart(4, '0')));
                 }
-            });
+                const allDataYesterday = (await Promise.all(requestsYesterday)).flat();
+                const validDataYesterday = allDataYesterday.filter(d => d && Object.keys(d).length > 0);
 
-            // Acumular Precipitação - Parte de 00h a 12h do dia alvo
-            validDataTarget.forEach(current => {
-                const currentHour = parseInt(current.HR_MEDICAO);
-                if (currentHour >= 0 && currentHour <= 1200) {
+                const allData = [...validDataToday, ...validDataYesterday];
+
+                if (allData.length === 0) {
+                    LOADING_ANIMATION.innerHTML = `<p style="color: red;">${translations[currentLang].loadingText.replace('Carregando dados, por favor aguarde...', 'Não foi possível carregar os dados. Por favor, tente novamente mais tarde.')}</p>`;
+                    return;
+                }
+
+                const stationsData = {};
+
+                // Lógica de processamento de dados (mantida) ...
+                validDataToday.forEach(current => {
+                    const stationId = current.CD_ESTACAO;
+                    if (!stationsData[stationId]) {
+                        stationsData[stationId] = {
+                            CD_ESTACAO: stationId,
+                            DC_NOME: current.DC_NOME,
+                            UF: current.UF,
+                            TEM_MAX: -Infinity,
+                            TEM_MIN: Infinity,
+                            UMD_MAX: -Infinity,
+                            UMD_MIN: Infinity,
+                            VEN_MAX: -Infinity,
+                            CHUVA_TOTAL: 0
+                        };
+                    }
+                    const temMax = parseFloat(current.TEM_MAX);
+                    if (!isNaN(temMax)) stationsData[stationId].TEM_MAX = Math.max(stationsData[stationId].TEM_MAX, temMax);
+                    const temMin = parseFloat(current.TEM_MIN);
+                    if (!isNaN(temMin)) stationsData[stationId].TEM_MIN = Math.min(stationsData[stationId].TEM_MIN, temMin);
+                    const umdMax = parseFloat(current.UMD_MAX);
+                    if (!isNaN(umdMax)) stationsData[stationId].UMD_MAX = Math.max(stationsData[stationId].UMD_MAX, umdMax);
+                    const umdMin = parseFloat(current.UMD_MIN);
+                    if (!isNaN(umdMin)) stationsData[stationId].UMD_MIN = Math.min(stationsData[stationId].UMD_MIN, umdMin);
+                    const venKmh = current.VEN_RAJ ? (parseFloat(current.VEN_RAJ) * 3.6) : NaN;
+                    if (!isNaN(venKmh)) stationsData[stationId].VEN_MAX = Math.max(stationsData[stationId].VEN_MAX, venKmh);
+                });
+
+                validDataYesterday.forEach(current => {
                     const stationId = current.CD_ESTACAO;
                     if (stationsData[stationId]) {
                         stationsData[stationId].CHUVA_TOTAL += parseFloat(current.CHUVA) || 0;
                     }
-                }
-            });
+                });
 
-            const processedData = Object.values(stationsData);
-
-            // --- Geração de Resumo Regional e Tabelas de UF (mantida) ---
-
-            const regionalSummary = {};
-            for (const [regiao, ufs] of Object.entries(REGIOES)) {
-                regionalSummary[regiao] = {
-                    region: regiao,
-                    temMax: -Infinity,
-                    temMin: Infinity,
-                    umdMax: -Infinity,
-                    umdMin: Infinity,
-                    venMax: -Infinity,
-                    chuvaTotal: 0
-                };
-                let hasData = false;
-                ufs.forEach(uf => {
-                    const stationsInUF = processedData.filter(d => d.UF === uf);
-                    if (stationsInUF.length > 0) {
-                        hasData = true;
-                        stationsInUF.forEach(station => {
-                            regionalSummary[regiao].temMax = Math.max(regionalSummary[regiao].temMax, station.TEM_MAX);
-                            regionalSummary[regiao].temMin = Math.min(regionalSummary[regiao].temMin, station.TEM_MIN);
-                            regionalSummary[regiao].umdMax = Math.max(regionalSummary[regiao].umdMax, station.UMD_MAX);
-                            regionalSummary[regiao].umdMin = Math.min(regionalSummary[regiao].umdMin, station.UMD_MIN);
-                            regionalSummary[regiao].venMax = Math.max(regionalSummary[regiao].venMax, station.VEN_MAX);
-                            regionalSummary[regiao].chuvaTotal += station.CHUVA_TOTAL;
-                        });
+                validDataToday.forEach(current => {
+                    const currentHour = parseInt(current.HR_MEDICAO);
+                    if (currentHour >= 0 && currentHour <= 1200) {
+                        const stationId = current.CD_ESTACAO;
+                        if (stationsData[stationId]) {
+                            stationsData[stationId].CHUVA_TOTAL += parseFloat(current.CHUVA) || 0;
+                        }
                     }
                 });
-                if (!hasData) {
-                    regionalSummary[regiao] = null;
+
+                processedData = Object.values(stationsData);
+                cachedProcessedData = processedData; // Cache
+                
+                const regionalSummary = {};
+                for (const [regiao, ufs] of Object.entries(REGIOES)) {
+                    regionalSummary[regiao] = {
+                        region: regiao,
+                        temMax: -Infinity,
+                        temMin: Infinity,
+                        umdMax: -Infinity,
+                        umdMin: Infinity,
+                        venMax: -Infinity,
+                        chuvaTotal: 0
+                    };
+                    let hasData = false;
+                    ufs.forEach(uf => {
+                        const stationsInUF = processedData.filter(d => d.UF === uf);
+                        if (stationsInUF.length > 0) {
+                            hasData = true;
+                            stationsInUF.forEach(station => {
+                                regionalSummary[regiao].temMax = Math.max(regionalSummary[regiao].temMax, station.TEM_MAX);
+                                regionalSummary[regiao].temMin = Math.min(regionalSummary[regiao].temMin, station.TEM_MIN);
+                                regionalSummary[regiao].umdMax = Math.max(regionalSummary[regiao].umdMax, station.UMD_MAX);
+                                regionalSummary[regiao].umdMin = Math.min(regionalSummary[regiao].umdMin, station.UMD_MIN);
+                                regionalSummary[regiao].venMax = Math.max(regionalSummary[regiao].venMax, station.VEN_MAX);
+                                regionalSummary[regiao].chuvaTotal += station.CHUVA_TOTAL;
+                            });
+                        }
+                    });
+                    if (!hasData) {
+                        regionalSummary[regiao] = null;
+                    }
                 }
+                
+                filteredRegionalSummary = Object.values(regionalSummary).filter(Boolean);
+                cachedRegionalSummary = filteredRegionalSummary; // Cache
             }
 
-            const filteredRegionalSummary = Object.values(regionalSummary).filter(Boolean);
-
-            if (filteredRegionalSummary.length > 0) {
+            // --- FIM DA LÓGICA DE FETCH/PROCESSAMENTO. INÍCIO DA LÓGICA DE RENDERIZAÇÃO ---
+            
+            const today = new Date();
+            const yesterday = new Date();
+            yesterday.setDate(today.getDate() - 1);
+            const todayFormatted = formatDate(today);
+            const yesterdayFormatted = formatDate(yesterday);
+            
+            DATA_TABLES_CONTAINER.innerHTML = '';
+            
+            // 1. Adicionar Tabela de Resumo Regional (TRADUÇÃO)
+            if (filteredRegionalSummary && filteredRegionalSummary.length > 0) {
                 DATA_TABLES_CONTAINER.appendChild(createRegionSummaryTable(filteredRegionalSummary));
             }
-
-            for (const [regiao, ufs] of Object.entries(REGIOES)) {
-                const regionHeader = document.createElement('h2');
-                regionHeader.className = 'region-title';
-                regionHeader.textContent = `Região ${regiao}`;
-                DATA_TABLES_CONTAINER.appendChild(regionHeader);
-
-                let foundDataInRegion = false;
-                ufs.forEach(uf => {
-                    const stationsInUF = processedData.filter(d => d.UF === uf);
-                    if (stationsInUF.length > 0) {
-                        foundDataInRegion = true;
-                        stationsInUF.sort((a, b) => {
-                            const isCapitalA = a.DC_NOME.includes(CAPITAIS[uf]);
-                            const isCapitalB = b.DC_NOME.includes(CAPITAIS[uf]);
-                            if (isCapitalA && !isCapitalB) return -1;
-                            if (!isCapitalA && isCapitalB) return 1;
-                            return a.DC_NOME.localeCompare(b.DC_NOME);
-                        });
-                        DATA_TABLES_CONTAINER.appendChild(createUFTable(uf, stationsInUF));
-                    }
+            
+            // 2. Adicionar Tabela do Distrito Federal (DF) - Prioridade
+            const dfStations = processedData.filter(d => d.UF === 'DF');
+            if (dfStations.length > 0) {
+                // Ordenar estações do DF para colocar a capital (Brasília) no topo
+                dfStations.sort((a, b) => {
+                    const isCapitalA = a.DC_NOME.includes(CAPITAIS['DF']);
+                    const isCapitalB = b.DC_NOME.includes(CAPITAIS['DF']);
+                    if (isCapitalA && !isCapitalB) return -1;
+                    if (!isCapitalA && isCapitalB) return 1;
+                    return a.DC_NOME.localeCompare(b.DC_NOME);
                 });
 
-                if (!foundDataInRegion) {
-                    const noDataParagraph = document.createElement('p');
-                    noDataParagraph.textContent = 'Nenhum dado encontrado para esta região.';
-                    DATA_TABLES_CONTAINER.appendChild(noDataParagraph);
+                const dfRegionHeader = document.createElement('h2');
+                dfRegionHeader.className = 'region-title';
+                dfRegionHeader.textContent = `${translations[currentLang].regionHeader} Centro-Oeste (DF)`;
+                DATA_TABLES_CONTAINER.appendChild(dfRegionHeader);
+
+                DATA_TABLES_CONTAINER.appendChild(createUFTable('DF', dfStations));
+            }
+
+            // 3. Adicionar as tabelas das demais UFs, agrupadas por Região (exceto DF)
+            for (const [regiao, ufs] of Object.entries(REGIOES)) {
+                
+                const ufsToProcess = ufs.filter(uf => uf !== 'DF'); // Remover DF da lista de processamento normal
+
+                if (ufsToProcess.length > 0) {
+                    const regionHeader = document.createElement('h2');
+                    regionHeader.className = 'region-title';
+                    regionHeader.textContent = `${translations[currentLang].regionHeader} ${regiao}`;
+                    
+                    if (regiao === 'Centro-Oeste' && ufsToProcess.length > 0) {
+                        DATA_TABLES_CONTAINER.appendChild(regionHeader);
+                    } else if (regiao !== 'Centro-Oeste') {
+                        DATA_TABLES_CONTAINER.appendChild(regionHeader);
+                    }
+                    
+                    let foundDataInRegion = false;
+                    ufsToProcess.forEach(uf => {
+                        const stationsInUF = processedData.filter(d => d.UF === uf);
+                        if (stationsInUF.length > 0) {
+                            foundDataInRegion = true;
+                            stationsInUF.sort((a, b) => {
+                                const isCapitalA = a.DC_NOME.includes(CAPITAIS[uf]);
+                                const isCapitalB = b.DC_NOME.includes(CAPITAIS[uf]);
+                                if (isCapitalA && !isCapitalB) return -1;
+                                if (!isCapitalA && isCapitalB) return 1;
+                                return a.DC_NOME.localeCompare(b.DC_NOME);
+                            });
+                            DATA_TABLES_CONTAINER.appendChild(createUFTable(uf, stationsInUF));
+                        }
+                    });
+
+                    if (!foundDataInRegion && ufsToProcess.length > 0) {
+                        const noDataParagraph = document.createElement('p');
+                        noDataParagraph.textContent = translations[currentLang].regionNoData;
+                        DATA_TABLES_CONTAINER.appendChild(noDataParagraph);
+                    }
                 }
             }
-            
-            // --- Geração de Gráficos (mantida) ---
 
+
+            // Gerar gráficos de destaque (TRADUÇÃO: usa titleKey e labelKey)
             const top15Chuva = processedData
                 .filter(d => d.CHUVA_TOTAL !== undefined && d.CHUVA_TOTAL > 0)
                 .sort((a, b) => b.CHUVA_TOTAL - a.CHUVA_TOTAL)
                 .slice(0, 15);
-            createBarChart('chart-chuva-total', 'Top 15 Municípios com Maior Precipitação', 'Precipitação (mm)', top15Chuva.map(d => d.CHUVA_TOTAL), top15Chuva.map(d => `${d.DC_NOME} - ${d.UF}`));
+            createBarChart('chart-chuva-total', 'chartTitleChuva', 'chuva', top15Chuva.map(d => d.CHUVA_TOTAL), top15Chuva.map(d => `${d.DC_NOME} - ${d.UF}`));
 
             const top15TempMax = processedData
                 .filter(d => d.TEM_MAX !== -Infinity)
                 .sort((a, b) => b.TEM_MAX - a.TEM_MAX)
                 .slice(0, 15);
-            createBarChart('chart-tem-max', 'Top 15 Municípios com Maior Temperatura Máxima', 'Temperatura (°C)', top15TempMax.map(d => d.TEM_MAX), top15TempMax.map(d => `${d.DC_NOME} - ${d.UF}`));
+            createBarChart('chart-tem-max', 'chartTitleTempMax', 'temp', top15TempMax.map(d => d.TEM_MAX), top15TempMax.map(d => `${d.DC_NOME} - ${d.UF}`));
 
             const top15UmidMax = processedData
                 .filter(d => d.UMD_MAX !== -Infinity)
                 .sort((a, b) => b.UMD_MAX - a.UMD_MAX)
                 .slice(0, 15);
-            createBarChart('chart-umd-max', 'Top 15 Municípios com Maior Umidade Relativa', 'Umidade (%)', top15UmidMax.map(d => d.UMD_MAX), top15UmidMax.map(d => `${d.DC_NOME} - ${d.UF}`));
+            createBarChart('chart-umd-max', 'chartTitleUmdMax', 'umd', top15UmidMax.map(d => d.UMD_MAX), top15UmidMax.map(d => `${d.DC_NOME} - ${d.UF}`));
 
             const top15VenMax = processedData
                 .filter(d => d.VEN_MAX !== -Infinity)
                 .sort((a, b) => b.VEN_MAX - a.VEN_MAX)
                 .slice(0, 15);
-            createBarChart('chart-ven-max', 'Top 15 Municípios com Maior Rajada de Vento', 'Rajada de Vento (km/h)', top15VenMax.map(d => d.VEN_MAX), top15VenMax.map(d => `${d.DC_NOME} - ${d.UF}`));
+            createBarChart('chart-ven-max', 'chartTitleVenMax', 'vento', top15VenMax.map(d => d.VEN_MAX), top15VenMax.map(d => `${d.DC_NOME} - ${d.UF}`));
 
             const top15UmidMin = processedData
                 .filter(d => d.UMD_MIN !== Infinity)
                 .sort((a, b) => a.UMD_MIN - b.UMD_MIN)
                 .slice(0, 15);
-            createBarChart('chart-umd-min', 'Top 15 Municípios com Menor Umidade Relativa', 'Umidade (%)', top15UmidMin.map(d => d.UMD_MIN), top15UmidMin.map(d => `${d.DC_NOME} - ${d.UF}`), false);
+            createBarChart('chart-umd-min', 'chartTitleUmdMin', 'umd', top15UmidMin.map(d => d.UMD_MIN), top15UmidMin.map(d => `${d.DC_NOME} - ${d.UF}`), false);
 
             const top15TempMin = processedData
                 .filter(d => d.TEM_MIN !== Infinity)
                 .sort((a, b) => a.TEM_MIN - b.TEM_MIN)
                 .slice(0, 15);
-            createBarChart('chart-tem-min', 'Top 15 Municípios com Menor Temperatura Mínima', 'Temperatura (°C)', top15TempMin.map(d => d.TEM_MIN), top15TempMin.map(d => `${d.DC_NOME} - ${d.UF}`), false);
+            createBarChart('chart-tem-min', 'chartTitleTempMin', 'temp', top15TempMin.map(d => d.TEM_MIN), top15TempMin.map(d => `${d.DC_NOME} - ${d.UF}`), false);
 
             addSortableTableFunctionality();
-
-            // --- Exibição Final ---
             
-            let sourceInfoText = `Dados de 00h às 23h para temperatura/umidade/vento do dia **${targetDateFormatted}**. `;
-            sourceInfoText += `Precipitação acumulada de 13h do dia **${yesterdayFormatted}** até 12h do dia **${targetDateFormatted}**.`;
+            // Adicionar e mostrar as informações da fonte de dados (TRADUÇÃO)
+            const dataSourceText = translations[currentLang].sourceText(todayFormatted, yesterdayFormatted);
+            DATA_SOURCE_INFO_BOTTOM.textContent = dataSourceText;
+            DATA_SOURCE_INFO_TOP.textContent = dataSourceText;
 
-            DATA_SOURCE_INFO.innerHTML = sourceInfoText;
-            
             LOADING_ANIMATION.style.display = 'none';
             DATA_CONTAINER.style.display = 'block';
             DATA_TABLES_CONTAINER.style.display = 'block';
-            DATA_SOURCE_INFO.style.display = 'block';
-            SEARCH_BUTTON.disabled = false;
+            DATA_SOURCE_INFO_BOTTOM.style.display = 'block';
+            DATA_SOURCE_INFO_TOP.style.display = 'block';
         }
 
         function getCellValue(tr, idx) {
@@ -682,7 +909,14 @@
          */
         function addSortableTableFunctionality() {
             document.querySelectorAll('th[data-column-index]').forEach(headerCell => {
-                headerCell.addEventListener('click', () => {
+                // Remove o event listener antigo para evitar duplicação em re-renderizações
+                const oldListener = headerCell.onclick;
+                if (oldListener) {
+                    headerCell.removeEventListener('click', oldListener);
+                }
+                
+                // Novo event listener
+                headerCell.addEventListener('click', function sortTable() {
                     const table = headerCell.closest('table');
                     const tbody = table.querySelector('tbody');
                     const rows = Array.from(tbody.querySelectorAll('tr'));
@@ -704,7 +938,7 @@
 
                     // Índices de colunas que contêm dados numéricos
                     const numericColumnsSummary = [1, 2, 3, 4, 5, 6];
-                    const numericColumnsStations = [2, 3, 4, 5, 6, 7]; // Ajustado para a coluna UF
+                    const numericColumnsStations = [2, 3, 4, 5, 6, 7];
 
                     const isNumeric = isSummaryTable
                         ? numericColumnsSummary.includes(column)
@@ -715,15 +949,17 @@
                         let valB = getCellValue(b, column);
 
                         if (isNumeric) {
-                            // Tratar valores não-numéricos (como '-') para ordenação
                             valA = typeof valA === 'number' ? valA : (sortOrder === 'asc' ? Infinity : -Infinity);
                             valB = typeof valB === 'number' ? valB : (sortOrder === 'asc' ? Infinity : -Infinity);
                         } else {
                             valA = String(valA);
                             valB = String(valB);
+                            // Usar o idioma atual para ordenação de texto
+                            const comparison = valA.localeCompare(valB, currentLang);
+                            return sortOrder === 'asc' ? comparison : -comparison;
                         }
 
-                        const comparison = isNumeric ? valA - valB : valA.localeCompare(valB, 'pt-BR');
+                        const comparison = valA - valB;
                         return sortOrder === 'asc' ? comparison : -comparison;
                     });
 
@@ -745,33 +981,7 @@
             });
         }
 
-        // --- Novas Funções para a Busca por Data ---
-
-        function handleDateSearch() {
-            const dateInput = document.getElementById('date-input');
-            const selectedDate = dateInput.value;
-
-            if (selectedDate) {
-                fetchAndProcessData(selectedDate);
-            } else {
-                alert('Por favor, selecione uma data para a busca.');
-            }
-        }
-
-        function setMaxDate() {
-            const today = new Date();
-            // Permite buscar até o dia anterior (pois os dados do dia atual podem estar incompletos)
-            // No entanto, como o código busca até 23h de hoje, a data máxima será o dia de hoje.
-            document.getElementById('date-input').setAttribute('max', formatDate(today));
-        }
-
-        // --- Inicialização ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            setMaxDate();
-            document.getElementById('search-button').addEventListener('click', handleDateSearch);
-            fetchAndProcessData(); // Carrega os dados do dia atual por padrão
-        });
+        document.addEventListener('DOMContentLoaded', () => fetchAndProcessData(false));
     </script>
 </body>
 </html>
