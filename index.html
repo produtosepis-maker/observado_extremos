@@ -142,6 +142,31 @@
             height: 15px;
             vertical-align: middle;
         }
+
+        /* Estilos do seletor de data (opção 2) */
+        .date-selector {
+            text-align: center;
+            margin: 10px 0 25px;
+        }
+        .date-selector input[type="date"] {
+            padding: 6px 8px;
+            font-size: 1em;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-right: 8px;
+        }
+        .date-selector button {
+            padding: 7px 12px;
+            font-size: 1em;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background-color: #009688;
+            color: white;
+        }
+        .date-selector button:hover {
+            background-color: #00796b;
+        }
     </style>
 </head>
 <body onload="setLanguage('pt')">
@@ -173,6 +198,12 @@
         <div id="data-container" style="display: none;">
             <div id="dataSourceInfoTop" class="data-source-info data-info-top" style="display: none;"></div>
             
+            <!-- OPÇÃO 2: seletor de data acima de "Gráficos de Destaque" -->
+            <div class="date-selector" id="dateSelectorContainer">
+                <input type="date" id="selectedDate" />
+                <button id="loadDateButton">Carregar dia escolhido</button>
+            </div>
+
             <h2 class="region-title" id="chartHeader">Gráficos de Destaque</h2>
             <div class="chart-container">
                 <h3 id="chartTitleChuva">Top 15 Municípios com Maior Precipitação</h3>
@@ -342,7 +373,7 @@
 
         let currentLang = 'pt';
         
-        // --- FUNÇÃO PARA TROCA DE IDIOMA (NOVO) ---
+        // --- FUNÇÃO PARA TROCA DE IDIOMA (AJUSTADA) ---
         function setLanguage(lang) {
             currentLang = lang;
             const t = translations[lang];
@@ -365,15 +396,8 @@
             document.getElementById(`lang-${lang}`).classList.add('active');
 
             // 3. Re-renderizar dados dinâmicos (e tabelas) se já estiverem carregados
-            if (document.getElementById('data-container').style.display !== 'none') {
-                // Remove as tabelas antigas e recarrega os dados com o novo idioma.
-                // Requisitar os dados novamente não é necessário, apenas renderizá-los.
-                // A função fetchAndProcessData será chamada, mas ela verifica se os dados já existem.
-                fetchAndProcessData(true); 
-            } else {
-                // Atualizar textos de data e rodapé (se o idioma mudar antes do carregamento)
-                updateDateTimeInfo();
-            }
+            // Ajuste: passar reRender=true sem alterar a data selecionada
+            fetchAndProcessData(null, true);
         }
         // --- FIM FUNÇÃO PARA TROCA DE IDIOMA ---
 
@@ -630,12 +654,22 @@
         // Armazenar dados processados para não recarregar em troca de idioma
         let cachedProcessedData = null;
         let cachedRegionalSummary = null;
+        let cachedDateUsed = null; // para saber qual data os caches representam
 
         /**
          * Função principal de carregamento e processamento.
-         * MODIFICADO: Aceita um argumento 'reRender' para saber se é apenas uma troca de idioma.
+         * Parâmetros:
+         *  - selectedDate (string 'YYYY-MM-DD' ou null para hoje)
+         *  - reRender (boolean) -> se true e existe cache, apenas re-renderiza (troca de idioma)
          */
-        async function fetchAndProcessData(reRender = false) {
+        async function fetchAndProcessData(selectedDate = null, reRender = false) {
+            // Compatibilidade: se a função for chamada com apenas um boolean (por engano),
+            // ajustar os parâmetros.
+            if (typeof selectedDate === 'boolean') {
+                reRender = selectedDate;
+                selectedDate = null;
+            }
+
             updateDateTimeInfo();
 
             const LOADING_ANIMATION = document.getElementById('loading');
@@ -644,36 +678,44 @@
             const DATA_SOURCE_INFO_BOTTOM = document.getElementById('dataSourceInfoBottom');
             const DATA_SOURCE_INFO_TOP = document.getElementById('dataSourceInfoTop');
 
-            let processedData = cachedProcessedData;
-            let filteredRegionalSummary = cachedRegionalSummary;
-            
-            if (!reRender) {
-                // Primeira carga ou recarga completa (não apenas troca de idioma)
+            let processedData = null;
+            let filteredRegionalSummary = null;
+
+            // Determinar data alvo: se selectedDate fornecida, usar ela; senão usar hoje
+            const dateToUse = selectedDate ? new Date(selectedDate + "T00:00:00") : new Date();
+            const todayFormatted = formatDate(dateToUse);
+
+            // Dia anterior relativo a data escolhida (X1)
+            const yesterdayDate = new Date(dateToUse);
+            yesterdayDate.setDate(dateToUse.getDate() - 1);
+            const yesterdayFormatted = formatDate(yesterdayDate);
+
+            // Se reRender === true e cache existe para a MESMA data, apenas re-renderizar (troca idioma)
+            if (reRender && cachedProcessedData && cachedDateUsed === todayFormatted) {
+                processedData = cachedProcessedData;
+                filteredRegionalSummary = cachedRegionalSummary;
+            } else {
+                // Se reRender solicitado mas cache é de outra data, precisamos refazer fetch para a nova data.
+                // Exibir loading.
                 LOADING_ANIMATION.style.display = 'block';
                 DATA_CONTAINER.style.display = 'none';
                 DATA_TABLES_CONTAINER.style.display = 'none';
                 DATA_SOURCE_INFO_BOTTOM.style.display = 'none';
                 DATA_SOURCE_INFO_TOP.style.display = 'none';
 
-                const today = new Date();
-                const yesterday = new Date();
-                yesterday.setDate(today.getDate() - 1);
-
-                const todayFormatted = formatDate(today);
-                const yesterdayFormatted = formatDate(yesterday);
-
-                // Lógica de fetch de dados (mantida) ...
-
+                // Realizar fetch dos horários do dia escolhido (00:00..23:00) e do dia anterior (13:00..23:00)
                 const requestsToday = [];
                 for (let i = 0; i <= 2300; i += 100) {
-                    requestsToday.push(fetchHourData(todayFormatted, String(i).padStart(4, '0')));
+                    const hourStr = String(i).padStart(4, '0');
+                    requestsToday.push(fetchHourData(todayFormatted, hourStr));
                 }
                 const allDataToday = (await Promise.all(requestsToday)).flat();
                 const validDataToday = allDataToday.filter(d => d && Object.keys(d).length > 0);
 
                 const requestsYesterday = [];
                 for (let i = 1300; i <= 2300; i += 100) {
-                    requestsYesterday.push(fetchHourData(yesterdayFormatted, String(i).padStart(4, '0')));
+                    const hourStr = String(i).padStart(4, '0');
+                    requestsYesterday.push(fetchHourData(yesterdayFormatted, hourStr));
                 }
                 const allDataYesterday = (await Promise.all(requestsYesterday)).flat();
                 const validDataYesterday = allDataYesterday.filter(d => d && Object.keys(d).length > 0);
@@ -687,7 +729,7 @@
 
                 const stationsData = {};
 
-                // Lógica de processamento de dados (mantida) ...
+                // Processar medidas do "today" (00h-23h) para TEM/UMD/VEN máximos/minimos
                 validDataToday.forEach(current => {
                     const stationId = current.CD_ESTACAO;
                     if (!stationsData[stationId]) {
@@ -715,26 +757,56 @@
                     if (!isNaN(venKmh)) stationsData[stationId].VEN_MAX = Math.max(stationsData[stationId].VEN_MAX, venKmh);
                 });
 
+                // Acumular CHUVA: parte do dia anterior (13h-23h) + parte do dia escolhido (00h-12h)
                 validDataYesterday.forEach(current => {
                     const stationId = current.CD_ESTACAO;
                     if (stationsData[stationId]) {
                         stationsData[stationId].CHUVA_TOTAL += parseFloat(current.CHUVA) || 0;
+                    } else {
+                        // Caso exista chuva no dia anterior para estação que não apareceu em validDataToday,
+                        // ainda assim criar a entrada (manter compatibilidade)
+                        stationsData[stationId] = {
+                            CD_ESTACAO: stationId,
+                            DC_NOME: current.DC_NOME || ('Estação ' + stationId),
+                            UF: current.UF || '??',
+                            TEM_MAX: -Infinity,
+                            TEM_MIN: Infinity,
+                            UMD_MAX: -Infinity,
+                            UMD_MIN: Infinity,
+                            VEN_MAX: -Infinity,
+                            CHUVA_TOTAL: parseFloat(current.CHUVA) || 0
+                        };
                     }
                 });
 
+                // Somar chuva do dia escolhido somente entre 00h e 12h (como na regra original)
                 validDataToday.forEach(current => {
                     const currentHour = parseInt(current.HR_MEDICAO);
-                    if (currentHour >= 0 && currentHour <= 1200) {
+                    if (!isNaN(currentHour) && currentHour >= 0 && currentHour <= 1200) {
                         const stationId = current.CD_ESTACAO;
                         if (stationsData[stationId]) {
                             stationsData[stationId].CHUVA_TOTAL += parseFloat(current.CHUVA) || 0;
+                        } else {
+                            stationsData[stationId] = {
+                                CD_ESTACAO: stationId,
+                                DC_NOME: current.DC_NOME,
+                                UF: current.UF,
+                                TEM_MAX: -Infinity,
+                                TEM_MIN: Infinity,
+                                UMD_MAX: -Infinity,
+                                UMD_MIN: Infinity,
+                                VEN_MAX: -Infinity,
+                                CHUVA_TOTAL: parseFloat(current.CHUVA) || 0
+                            };
                         }
                     }
                 });
 
                 processedData = Object.values(stationsData);
                 cachedProcessedData = processedData; // Cache
-                
+                cachedDateUsed = todayFormatted;
+
+                // Montar resumo regional
                 const regionalSummary = {};
                 for (const [regiao, ufs] of Object.entries(REGIOES)) {
                     regionalSummary[regiao] = {
@@ -765,30 +837,20 @@
                         regionalSummary[regiao] = null;
                     }
                 }
-                
                 filteredRegionalSummary = Object.values(regionalSummary).filter(Boolean);
                 cachedRegionalSummary = filteredRegionalSummary; // Cache
             }
 
-            // --- FIM DA LÓGICA DE FETCH/PROCESSAMENTO. INÍCIO DA LÓGICA DE RENDERIZAÇÃO ---
-            
-            const today = new Date();
-            const yesterday = new Date();
-            yesterday.setDate(today.getDate() - 1);
-            const todayFormatted = formatDate(today);
-            const yesterdayFormatted = formatDate(yesterday);
-            
+            // --- RENDERIZAÇÃO ---
             DATA_TABLES_CONTAINER.innerHTML = '';
-            
-            // 1. Adicionar Tabela de Resumo Regional (TRADUÇÃO)
+
             if (filteredRegionalSummary && filteredRegionalSummary.length > 0) {
                 DATA_TABLES_CONTAINER.appendChild(createRegionSummaryTable(filteredRegionalSummary));
             }
-            
-            // 2. Adicionar Tabela do Distrito Federal (DF) - Prioridade
+
+            // Distrito Federal com prioridade
             const dfStations = processedData.filter(d => d.UF === 'DF');
             if (dfStations.length > 0) {
-                // Ordenar estações do DF para colocar a capital (Brasília) no topo
                 dfStations.sort((a, b) => {
                     const isCapitalA = a.DC_NOME.includes(CAPITAIS['DF']);
                     const isCapitalB = b.DC_NOME.includes(CAPITAIS['DF']);
@@ -805,22 +867,16 @@
                 DATA_TABLES_CONTAINER.appendChild(createUFTable('DF', dfStations));
             }
 
-            // 3. Adicionar as tabelas das demais UFs, agrupadas por Região (exceto DF)
+            // Tabelas por região/UF
             for (const [regiao, ufs] of Object.entries(REGIOES)) {
-                
-                const ufsToProcess = ufs.filter(uf => uf !== 'DF'); // Remover DF da lista de processamento normal
+                const ufsToProcess = ufs.filter(uf => uf !== 'DF');
 
                 if (ufsToProcess.length > 0) {
                     const regionHeader = document.createElement('h2');
                     regionHeader.className = 'region-title';
                     regionHeader.textContent = `${translations[currentLang].regionHeader} ${regiao}`;
-                    
-                    if (regiao === 'Centro-Oeste' && ufsToProcess.length > 0) {
-                        DATA_TABLES_CONTAINER.appendChild(regionHeader);
-                    } else if (regiao !== 'Centro-Oeste') {
-                        DATA_TABLES_CONTAINER.appendChild(regionHeader);
-                    }
-                    
+                    DATA_TABLES_CONTAINER.appendChild(regionHeader);
+
                     let foundDataInRegion = false;
                     ufsToProcess.forEach(uf => {
                         const stationsInUF = processedData.filter(d => d.UF === uf);
@@ -845,8 +901,7 @@
                 }
             }
 
-
-            // Gerar gráficos de destaque (TRADUÇÃO: usa titleKey e labelKey)
+            // Gráficos de destaque
             const top15Chuva = processedData
                 .filter(d => d.CHUVA_TOTAL !== undefined && d.CHUVA_TOTAL > 0)
                 .sort((a, b) => b.CHUVA_TOTAL - a.CHUVA_TOTAL)
@@ -885,7 +940,7 @@
 
             addSortableTableFunctionality();
             
-            // Adicionar e mostrar as informações da fonte de dados (TRADUÇÃO)
+            // Fonte de dados (Tradução)
             const dataSourceText = translations[currentLang].sourceText(todayFormatted, yesterdayFormatted);
             DATA_SOURCE_INFO_BOTTOM.textContent = dataSourceText;
             DATA_SOURCE_INFO_TOP.textContent = dataSourceText;
@@ -981,7 +1036,36 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => fetchAndProcessData(false));
+        // Inicialização dos controles do seletor de data (opção 2)
+        function initializeDateSelector() {
+            const input = document.getElementById('selectedDate');
+            const loadButton = document.getElementById('loadDateButton');
+
+            // Definir valor padrão = hoje (formato YYYY-MM-DD)
+            const today = new Date();
+            input.value = formatDate(today);
+            // Limitar max = hoje
+            input.max = formatDate(today);
+
+            loadButton.addEventListener('click', () => {
+                const val = input.value;
+                if (!val) return alert('Escolha uma data válida.');
+                // Invalidar cache se data mudou
+                if (cachedDateUsed !== val) {
+                    cachedProcessedData = null;
+                    cachedRegionalSummary = null;
+                    cachedDateUsed = null;
+                }
+                // Carregar a data escolhida (reRender = false para forçar fetch)
+                fetchAndProcessData(val, false);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDateSelector();
+            // Carregar com data padrão (hoje)
+            fetchAndProcessData(null, false);
+        });
     </script>
 </body>
 </html>
